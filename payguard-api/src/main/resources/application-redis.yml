@@ -1,0 +1,13 @@
+# 'redis' profili — Redis çalışıyorken aktive et:
+#   mvn -pl payguard-api -am spring-boot:run -Dspring-boot.run.profiles=redis
+# .NET karşılığı: appsettings RedisSettings (Host/IsActive)
+
+spring:
+  cache:
+    type: redis
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  cache.redis:
+    time-to-live: 120000     # 2 dk (CacheSettings.SlidingExpiration ~ karşılığı)
