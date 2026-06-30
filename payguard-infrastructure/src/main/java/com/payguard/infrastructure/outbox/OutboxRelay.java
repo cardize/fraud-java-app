@@ -15,11 +15,8 @@ import java.util.List;
 /**
  * Outbox relay: PENDING mesajları periyodik olarak işleyip yayımlar (PROCESSED yapar).
  *
- * .NET karşılığı: QueueWorker'ın BackgroundService.ExecuteAsync döngüsü — ama kaynak in-memory channel
- * değil, KALICI DB. Proses çökse bile PENDING kayıtlar DB'de durur ve yeniden başlayınca işlenir.
- *
- * Gerçek sistemde process() içinde: offline senaryolar + HitScenario/FraudAction kaydı + bildirim,
- * ya da bir Kafka/RabbitMQ publish çağrısı yapılır (en-az-bir-kez teslim).
+ * Kaynak in-memory değil KALICI DB. Proses çökse bile PENDING kayıtlar DB'de durur ve yeniden
+ * başlayınca işlenir. Yayım hedefi seçili MessagePublisher (logging/kafka/rabbit) ile en-az-bir-kez teslim.
  */
 @Component
 public class OutboxRelay {

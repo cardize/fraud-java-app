@@ -6,9 +6,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 /**
  * API Gateway giriş noktası.
  *
- * .NET karşılığı: PayGuard.External.API/Program.cs (Ocelot host'u).
- * İstekleri arka taraftaki Internal API'ye (payguard-api) yönlendiren ince bir reverse proxy.
- * Route'lar application.yml'de tanımlı (ocelot.json karşılığı).
+ * İstekleri arka taraftaki API'ye (payguard-api) yönlendiren ince bir reverse proxy.
+ * Route'lar application.yml'de tanımlı.
  */
 @SpringBootApplication
 public class GatewayApplication {

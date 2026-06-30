@@ -1,10 +1,7 @@
 package com.payguard.application.common;
 
 /**
- * Standart sonuç zarfı (başarı/veri/mesaj).
- *
- * .NET karşılığı: Core.Utilities.Results.IDataResult<T> / DataResult<T> / CreatedDataResult<T>
- * (Prisma framework'ünden gelen ortak dönüş tipi).
+ * Standart API sonuç zarfı (başarı/veri/mesaj).
  */
 public record ApiResult<T>(boolean success, T data, String message) {
 

@@ -17,14 +17,11 @@ import java.util.UUID;
 
 /**
  * Kart fraud akışının kalbi.
- *
- * .NET karşılığı: RequestGetFraudResponseForCardCommand.Handle (~600 satır).
- * Akış birebir aynı mantıkla, sade biçimde:
  *   1) İşlemi kaydet (yeni TransactionId üret)
  *   2) Duplicate ise fraud kontrolünü atla
  *   3) FraudParameters oluştur
  *   4) Online senaryoları SENKRON çalıştır -> fraudResponseCode (istemciye döner)
- *   5) Offline işlemleri kuyruğa at (yanıtı bekletmeden)
+ *   5) Offline işlemleri outbox'a yaz (yanıtı bekletmeden)
  */
 @Component
 public class GetFraudResponseForCardHandler
@@ -60,7 +57,7 @@ public class GetFraudResponseForCardHandler
                 cmd.shadowCardNo(), cmd.amount(), cmd.merchantId(),
                 cmd.transactionDate(), controlCode);
 
-        // önceki aynı mesajı "latest değil" yap (.NET: UpdateIsLatestRequestToFalseForTransaction)
+        // önceki aynı mesajı "latest değil" yap
         transactionStore.markPreviousAsNotLatest(cmd.transactionMessageId(), cmd.module(), transactionId);
 
         // 2) Duplicate ise fraud kontrolü yapılmaz

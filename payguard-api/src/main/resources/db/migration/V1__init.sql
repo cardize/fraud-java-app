@@ -1,4 +1,4 @@
--- PayGuard ilk şema (Flyway V1). .NET EF Core "initial migration" karşılığı.
+-- PayGuard ilk şema (Flyway V1).
 -- Kolon adları Hibernate varsayılan snake_case stratejisiyle uyumludur (messageId -> message_id).
 
 CREATE TABLE transactions (

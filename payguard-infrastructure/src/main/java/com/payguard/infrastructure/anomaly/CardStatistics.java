@@ -7,8 +7,7 @@ import java.util.Deque;
 /**
  * Bir kartın çevrimiçi (online) istatistikleri: ortalama tutar, varyans, son işlem zamanları.
  *
- * .NET karşılığı: PayGuard.Domain.Issuer/AggregateRoots/CardStatistics + AnomalyDetectionService'in
- * tuttuğu istatistikler. Ortalama/varyans Welford algoritmasıyla artımlı (tüm geçmişi saklamadan) hesaplanır.
+ * Ortalama/varyans Welford algoritmasıyla artımlı (tüm geçmişi saklamadan) hesaplanır.
  */
 public class CardStatistics {
 

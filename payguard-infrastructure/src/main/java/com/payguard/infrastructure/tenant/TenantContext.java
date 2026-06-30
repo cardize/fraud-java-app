@@ -3,8 +3,8 @@ package com.payguard.infrastructure.tenant;
 /**
  * O anki isteğin kiracısını (tenant) thread-local olarak tutar.
  *
- * .NET karşılığı: ITenantProvider (GetTenant). Her HTTP isteği başında set edilir (TenantFilter),
- * istek bitince temizlenir. RoutingDataSource hangi DB'ye gidileceğini buradan okur.
+ * Her HTTP isteği başında set edilir (TenantFilter), istek bitince temizlenir.
+ * RoutingDataSource hangi DB'ye gidileceğini buradan okur.
  */
 public final class TenantContext {
 

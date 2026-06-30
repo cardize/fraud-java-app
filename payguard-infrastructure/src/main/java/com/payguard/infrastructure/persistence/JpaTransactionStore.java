@@ -14,7 +14,6 @@ import java.util.UUID;
  * delege ederek gerçekler. Application bu sınıfı görmez; sadece portu (interface) bilir.
  *
  * VARSAYILAN adapter: payguard.persistence.transaction-store=jpa (veya ayar yoksa).
- * .NET karşılığı: yönetim/CRUD yolundaki EF Core repository.
  */
 @Component
 @ConditionalOnProperty(name = "payguard.persistence.transaction-store", havingValue = "jpa", matchIfMissing = true)

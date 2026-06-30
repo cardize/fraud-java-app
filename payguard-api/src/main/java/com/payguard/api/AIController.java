@@ -10,8 +10,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * AI / anomali tespiti uç noktaları.
- *
- * .NET karşılığı: PayGuard.Internal.API/Controllers/AIController.cs.
  * Controller ince: komutu Mediator'a verir (CQRS).
  */
 @RestController

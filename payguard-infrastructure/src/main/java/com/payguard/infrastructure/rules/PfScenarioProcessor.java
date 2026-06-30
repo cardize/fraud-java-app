@@ -6,8 +6,6 @@ import org.springframework.stereotype.Component;
 
 /**
  * Payment Facilitator (PF) senaryo işlemcisi.
- *
- * .NET karşılığı: PF için ürün-tipi processor'ı (ScenarioProcessorFactory üzerinden seçilir).
  * Yeni ürün eklemenin ne kadar kolay olduğunu gösterir: sadece bu bean + supportedType().
  */
 @Component

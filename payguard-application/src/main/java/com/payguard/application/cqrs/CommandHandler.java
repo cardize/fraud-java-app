@@ -3,9 +3,6 @@ package com.payguard.application.cqrs;
 /**
  * Bir komutu işleyen handler.
  *
- * .NET karşılığı: MediatR'ın IRequestHandler<TRequest, TResponse> arayüzü.
- * (PayGuard'da: GetFraudResponseForCardCommandHandler : IRequestHandler<..., ...>)
- *
  * @param <C> işlenecek komut tipi
  * @param <R> komutun dönüş tipi
  */

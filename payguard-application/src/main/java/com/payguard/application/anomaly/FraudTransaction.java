@@ -5,8 +5,6 @@ import java.util.UUID;
 
 /**
  * Anomali kontrolüne giren işlem özeti.
- *
- * .NET karşılığı: PayGuard.Application.AI/Handlers/AnomalyDetections/Dtos/FraudTransactionDto.
  */
 public record FraudTransaction(
         UUID transactionId,

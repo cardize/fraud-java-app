@@ -18,8 +18,6 @@ import java.util.UUID;
  * İş kaydı (transaction) ile AYNI veritabanı transaction'ında yazılır → ya ikisi de yazılır
  * ya hiçbiri (atomik). Böylece "mesajı kuyruğa attım ama DB commit olmadı" / "DB commit oldu ama
  * mesaj kayboldu" tutarsızlıkları imkânsızlaşır. Bir relay sonradan PENDING kayıtları yayımlar.
- *
- * .NET tarafında karşılığı: in-memory Channels kuyruğunun YERİNE kalıcı outbox (öneri olarak işaretliydi).
  */
 @Entity
 @Table(name = "outbox_messages")

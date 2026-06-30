@@ -12,7 +12,7 @@
 
     <artifactId>payguard-infrastructure</artifactId>
     <name>PayGuard Infrastructure</name>
-    <description>JPA adapter'ları, kural değerlendirici. .NET: PayGuard.Infrastructure + PayGRulesEngine</description>
+    <description>JPA adapter'ları, kural değerlendirici, dış sistem entegrasyonları</description>
 
     <dependencies>
         <!-- application port'larını implemente eder; domain transitif gelir -->
@@ -21,18 +21,18 @@
             <artifactId>payguard-application</artifactId>
         </dependency>
 
-        <!-- JPA/Hibernate (EF Core karşılığı). spring-context + SpEL'i transitif getirir -->
+        <!-- JPA/Hibernate. spring-context + SpEL'i transitif getirir -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
 
-        <!-- Cache abstraction (@Cacheable/@CacheEvict). .NET'teki IMemoryCache/CacheController karşılığı -->
+        <!-- Cache abstraction (@Cacheable/@CacheEvict) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-cache</artifactId>
         </dependency>
-        <!-- Redis cache sağlayıcısı (StackExchange.Redis karşılığı).
+        <!-- Redis cache sağlayıcısı.
              Varsayılan cache.type=simple olduğundan bağlantı denenmez; 'redis' profiliyle aktif olur. -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -50,10 +50,16 @@
             <artifactId>spring-boot-starter-amqp</artifactId>
         </dependency>
 
-        <!-- Flyway: SQL tabanlı şema migration (.NET EF Core Migrations karşılığı) -->
+        <!-- Flyway: SQL tabanlı şema migration. Varsayılan. -->
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>
+        </dependency>
+        <!-- Liquibase: alternatif migration aracı (XML/YAML changelog). 'liquibase' profiliyle aktif olur;
+             varsayılanda spring.liquibase.enabled=false (Flyway kullanılır). -->
+        <dependency>
+            <groupId>org.liquibase</groupId>
+            <artifactId>liquibase-core</artifactId>
         </dependency>
 
         <dependency>

@@ -12,15 +12,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * Kalıcı işlem kaydı (JPA entity).
- *
- * .NET karşılığı: PayGuard.Domain.Issuer/Acquirer/AggregateRoots/Transaction.cs
- * Eşleme: EF Core'da ayrı *EntityConfiguration.cs ile yapılırdı (Fluent API);
- * JPA'da anotasyonlarla (@Entity, @Id...) yapıyoruz. Karmaşık eşleme gerekirse
- * @Table/@Column ya da ayrı bir AttributeConverter kullanılır.
- *
- * NOT: .NET'te sıcak yol Dapper ile yazılıyordu (performans). Burada öğrenme amacıyla
- * JPA repository kullanıyoruz; ileride hot-path için Spring JdbcTemplate (Dapper karşılığı) eklenebilir.
+ * Kalıcı işlem kaydı (JPA entity). Eşleme JPA anotasyonlarıyla (@Entity, @Id...) yapılır.
  */
 @Entity
 @Table(name = "transactions")

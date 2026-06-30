@@ -10,9 +10,6 @@ import java.util.UUID;
  * Bu arayüz APPLICATION katmanında durur; implementasyonu (adapter) INFRASTRUCTURE'dadır.
  * Böylece application, JPA/Spring Data gibi altyapı detaylarına BAĞIMLI OLMAZ — bağımlılık
  * yönü her zaman içe doğrudur (api → infrastructure → application → domain).
- *
- * .NET karşılığı: handler'ın bağımlı olduğu IRuleDapperRepository arayüzü
- * (interface Application'da, Dapper implementasyonu Infrastructure'da).
  */
 public interface TransactionStore {
 

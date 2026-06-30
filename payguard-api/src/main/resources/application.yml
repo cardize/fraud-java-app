@@ -1,14 +1,11 @@
-# PayGuard (Java port) — uygulama konfigürasyonu
-# .NET karşılığı: appsettings.json
+# PayGuard — uygulama konfigürasyonu
 
 spring:
   application:
     name: payguard
 
-  # H2 in-memory veritabanı (öğrenme/çalıştırma için).
-  # .NET karşılığı: DatabaseConfig.DatabaseType. Üretimde SQL Server / PostgreSQL'e geçilir:
-  #   - SQL Server: com.microsoft.sqlserver:mssql-jdbc + url jdbc:sqlserver://...
-  #   - PostgreSQL: org.postgresql:postgresql + url jdbc:postgresql://...
+  # H2 in-memory veritabanı (geliştirme/çalıştırma için).
+  # Üretimde PostgreSQL'e geçilir: org.postgresql:postgresql + url jdbc:postgresql://...
   datasource:
     url: jdbc:h2:mem:payguard;DB_CLOSE_DELAY=-1
     driver-class-name: org.h2.Driver
@@ -25,10 +22,13 @@ spring:
       hibernate:
         format_sql: true
 
-  # Flyway: classpath:db/migration altındaki V*.sql dosyalarını sırayla uygular (.NET EF migrations).
+  # Flyway: classpath:db/migration altındaki V*.sql dosyalarını sırayla uygular.
   flyway:
     enabled: true
     baseline-on-migrate: true
+  # Liquibase varsayılanda KAPALI (Flyway ile çakışmasın). 'liquibase' profiliyle açılır.
+  liquibase:
+    enabled: false
 
   h2:
     console:
@@ -40,19 +40,18 @@ spring:
     type: simple
 
 server:
-  port: 8080                # .NET Internal API 5100 idi
+  port: 8080
 
 # Senaryo motoru ayarları
-# .NET karşılığı: appsettings ScenarioExecutionMode (IsParallel, MaxDegreeOfParallelism)
 payguard:
   scenario:
     parallel: true
     max-parallelism: 10
   persistence:
-    # İşlem yazımı için adapter seçimi: jpa (varsayılan) | jdbc (Dapper-vari hot-path)
+    # İşlem yazımı için adapter seçimi: jpa (varsayılan) | jdbc (ham SQL hot-path)
     transaction-store: jpa
   ai:
-    # .NET karşılığı: AISettings.IsActive
+    # Anomali tespiti açık/kapalı
     enabled: true
   security:
     # HMAC-SHA256 için en az 256-bit (32+ karakter) gizli anahtar. Üretimde ENV'den verilir!
@@ -65,7 +64,7 @@ payguard:
     # Yayımcı: logging (varsayılan, broker'sız) | kafka | rabbit
     publisher: logging
 
-# Actuator: sağlık/metrik uçları (.NET HealthChecks karşılığı). /actuator/health public.
+# Actuator: sağlık/metrik uçları. /actuator/health public.
 management:
   endpoints:
     web:

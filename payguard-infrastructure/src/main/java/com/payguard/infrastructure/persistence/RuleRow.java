@@ -13,7 +13,6 @@ import jakarta.persistence.Table;
 /**
  * Kural tablosu satırı (JPA entity / persistence modeli).
  *
- * .NET karşılığı: PayGuard.Domain/Entities/Rule.cs + RuleEntityConfiguration (EF Fluent mapping).
  * Bilinçli ayrım: bu PERSISTENCE modeli; domain'deki {@link com.payguard.domain.rule.Rule}
  * record'u ise saf İŞ modeli. ScenarioCatalog ikisini birbirine map'ler.
  */

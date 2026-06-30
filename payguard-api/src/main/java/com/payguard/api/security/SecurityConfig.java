@@ -11,10 +11,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 /**
  * Güvenlik zinciri: stateless JWT doğrulama.
  *
- * .NET karşılığı: Startup.cs içindeki AddAuthentication(JwtBearer) + UseAuthentication/UseAuthorization
- * ve [Authorize] kuralları.
- *
- * Açık (public) uçlar: login, actuator health, h2-console. Diğer her şey token ister.
+ * Açık (public) uçlar: login, actuator health, h2-console, Swagger UI. Diğer her şey token ister.
  */
 @Configuration
 public class SecurityConfig {
@@ -25,7 +22,8 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)                       // stateless API
                 .headers(h -> h.frameOptions(f -> f.disable()))             // h2-console iframe için
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/auth/**", "/actuator/health", "/h2-console/**").permitAll()
+                        .requestMatchers("/api/v1/auth/**", "/actuator/health", "/h2-console/**",
+                                "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                         .anyRequest().authenticated())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);

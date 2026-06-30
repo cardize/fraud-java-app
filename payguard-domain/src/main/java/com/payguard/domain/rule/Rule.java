@@ -3,11 +3,7 @@ package com.payguard.domain.rule;
 import java.io.Serializable;
 
 /**
- * Tek bir kural. SpEL (Spring Expression Language) ifadesi tutar.
- *
- * .NET karşılığı: PayGuard.Domain/Entities/Rule.cs + RuleInfo (kural motoru modeli).
- * .NET'te Microsoft RulesEngine "lambda expression" string'i değerlendiriyordu;
- * Java tarafında bunun en yakın yerleşik karşılığı SpEL'dir.
+ * Tek bir kural. Değerlendirme için SpEL (Spring Expression Language) ifadesi tutar.
  *
  * @param id            kural kimliği
  * @param name          okunabilir ad

@@ -6,8 +6,6 @@ import org.springframework.stereotype.Component;
 
 /**
  * PayCell senaryo işlemcisi.
- *
- * .NET karşılığı: PayCell ürün-tipi processor'ı.
  */
 @Component
 public class PayCellScenarioProcessor extends BaseScenarioProcessor {

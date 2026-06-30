@@ -8,8 +8,7 @@ import java.util.UUID;
 /**
  * Kural motorunun değerlendireceği parametre seti.
  *
- * .NET karşılığı: PayGRulesEngine/Models/FraudParameters + TransactionComputedParameters.
- * Kurallar (SpEL ifadeleri) bu nesnenin alanlarına/getter'larına erişir.
+ * Kurallar (SpEL ifadeleri) bu nesnenin getter'larına erişir.
  * Örn kural ifadesi: "amount > 5000 and hourOfDay < 6"
  */
 public class FraudParameters {

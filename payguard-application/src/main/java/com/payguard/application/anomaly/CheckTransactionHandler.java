@@ -6,8 +6,6 @@ import org.springframework.stereotype.Component;
 
 /**
  * CheckTransactionCommand handler'ı — anomali kontrolünü port'a delege eder.
- *
- * .NET karşılığı: CheckTransactionCommandHandler (IAnomalyDetectionService.CheckTransactionAsync çağrısı).
  */
 @Component
 public class CheckTransactionHandler

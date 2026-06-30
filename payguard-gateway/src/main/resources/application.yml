@@ -1,8 +1,7 @@
 # API Gateway konfigürasyonu
-# .NET karşılığı: ocelot.json (Routes: DownstreamHostAndPorts / UpstreamPathTemplate)
 
 server:
-  port: 8090                 # .NET External API ~5292
+  port: 8090
 
 spring:
   application:
@@ -10,18 +9,17 @@ spring:
   cloud:
     gateway:
       routes:
-        # Tüm /api/** isteklerini Internal API'ye (8080) ilet
-        # Ocelot: UpstreamPathTemplate /api/v1/{everything} -> DownstreamHostAndPorts localhost:8080
+        # Tüm /api/** isteklerini arka API'ye (8080) ilet
         - id: internal-api
           uri: http://localhost:8080
           predicates:
             - Path=/api/**
-        # Actuator health'i de geçir (Ocelot'taki /jobs, /FraudService.svc benzeri ek route'lar buraya)
+        # Actuator health'i de geçir
         - id: internal-actuator
           uri: http://localhost:8080
           predicates:
             - Path=/actuator/**
-      # Basit global CORS (Ocelot CORS politikası karşılığı)
+      # Basit global CORS
       globalcors:
         cors-configurations:
           '[/**]':

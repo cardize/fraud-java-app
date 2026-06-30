@@ -11,7 +11,6 @@ import java.util.UUID;
 /**
  * Spring Data JPA repository (altyapı detayı).
  *
- * .NET karşılığı: EF Core DbSet + LINQ / Dapper sorguları.
  * Spring, bu arayüzün implementasyonunu OTOMATİK üretir. Bu tip Spring Data'ya
  * bağımlı olduğu için APPLICATION'da değil, INFRASTRUCTURE'da durur; dışarıya
  * TransactionStore portu üzerinden açılır (bkz. JpaTransactionStore).

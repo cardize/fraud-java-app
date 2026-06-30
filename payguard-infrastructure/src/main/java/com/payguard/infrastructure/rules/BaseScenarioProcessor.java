@@ -17,7 +17,6 @@ import java.util.concurrent.Future;
 /**
  * Tüm ürün tipleri için ORTAK senaryo yürütme mantığı (paralel değerlendirme + öncelik kararı).
  *
- * .NET karşılığı: PayGRulesEngine/Processors/Implementations/BaseScenarioProcessor.cs (abstract).
  * Alt sınıflar yalnızca desteklediği ürün tipini bildirir; tüm motor mantığı burada tek yerde.
  *
  * Karar: tüm senaryolar değerlendirilir; "hit" olanlardan EN YÜKSEK ÖNCELİKLİ (priority en küçük)
@@ -58,7 +57,7 @@ public abstract class BaseScenarioProcessor implements ScenarioProcessor {
     }
 
     private List<Scenario> evaluateParallel(List<Scenario> scenarios, FraudParameters params) {
-        // .NET ConcurrentScenarioLimit / MaxDegreeOfParallelism karşılığı: sınırlı thread havuzu.
+        // Paralellik derecesi sınırlı bir thread havuzuyla denetlenir.
         ExecutorService pool = Executors.newFixedThreadPool(Math.max(1, maxParallelism));
         try {
             List<Future<Optional<Scenario>>> futures = scenarios.stream()

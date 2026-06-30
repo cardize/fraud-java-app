@@ -12,9 +12,8 @@ import java.util.UUID;
 /**
  * TransactionStore portunun JdbcTemplate (ham SQL) ADAPTER'ı — "hot path" implementasyonu.
  *
- * .NET karşılığı: PayGRulesEngine/Repository/RuleDapperRepository (Dapper).
- * Sıcak yolda (her işlemde çalışan kayıt) ORM yükünü atlayıp doğrudan SQL kullanır — .NET'teki
- * "CRUD = EF Core, sıcak yol = Dapper" ayrımının birebir karşılığı.
+ * Sıcak yolda (her işlemde çalışan kayıt) ORM yükünü atlayıp doğrudan SQL kullanır:
+ * "CRUD = JPA, sıcak yol = JdbcTemplate" ayrımı.
  *
  * Aktive etmek için: application.yml -> payguard.persistence.transaction-store: jdbc
  * (Aynı anda yalnızca BİR TransactionStore bean'i aktif olur; @ConditionalOnProperty bunu sağlar.)

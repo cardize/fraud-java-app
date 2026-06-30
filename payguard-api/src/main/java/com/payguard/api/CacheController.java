@@ -6,10 +6,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Cache yönetimi uç noktaları.
- *
- * .NET karşılığı: PayGuard.Internal.API/Controllers/CacheController.cs (+ CacheSynchronization).
- * Kural/senaryo değiştiğinde cache'i temizlemek için kullanılır.
+ * Cache yönetimi uç noktaları. Kural/senaryo değiştiğinde cache'i temizlemek için kullanılır.
  */
 @RestController
 @RequestMapping("/api/v1/cache")

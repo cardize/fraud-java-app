@@ -14,8 +14,7 @@ import java.util.Date;
 /**
  * JWT üretir ve doğrular (HMAC-SHA256, simetrik gizli anahtar).
  *
- * .NET karşılığı: JwtBearer token üretimi/validasyonu (TokenValidationParameters + SecurityKey).
- * Öğrenme dilimi için simetrik anahtar (IdP gerektirmez); üretimde IdP/JWKS'e geçilir.
+ * Simetrik anahtar IdP gerektirmez; üretimde IdP/JWKS'e geçilir.
  */
 @Service
 public class JwtService {

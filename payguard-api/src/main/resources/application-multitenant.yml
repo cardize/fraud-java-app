@@ -2,13 +2,12 @@
 #   mvn -pl payguard-api -am spring-boot:run -Dspring-boot.run.profiles=multitenant
 # İstekte tenant seçimi:  -H "X-Tenant: alpha"   (yoksa varsayılan DB)
 #
-# NOT: Routing DataSource özel tanımlandığı için şema yönetimi varsayılan hedefe uygulanır.
-# Gerçek kullanımda her tenant DB'sine ayrı Flyway migration koşulur.
+# Şema her tenant DB'sine MultiTenantFlywayMigrator ile ayrı ayrı uygulanır (@PostConstruct).
 
 spring:
   flyway:
-    # Çok-kiracıda Flyway'i programatik olarak her DataSource için çalıştırmak gerekir; demo'da kapalı.
+    # Boot'un tek-DataSource otomatik Flyway'i kapalı; migration'ı tenant başına biz koşuyoruz.
     enabled: false
   jpa:
     hibernate:
-      ddl-auto: update     # demo: varsayılan tenant DB'sinde şemayı Hibernate oluştursun
+      ddl-auto: none       # şema Flyway'in (per-tenant) sorumluluğunda

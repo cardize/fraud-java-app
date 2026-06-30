@@ -9,8 +9,8 @@ import org.springframework.stereotype.Component;
 /**
  * AI kapalıyken (payguard.ai.enabled=false) devreye giren no-op detektör.
  *
- * .NET karşılığı: AISettings.IsActive=false durumu — anomali kontrolü atlanır (her işlem temiz sayılır).
- * Böylece handler her zaman bir AnomalyDetector bean'i bulur; akış kırılmaz.
+ * Anomali kontrolü atlanır (her işlem temiz sayılır). Böylece handler her zaman bir
+ * AnomalyDetector bean'i bulur; akış kırılmaz.
  */
 @Component
 @ConditionalOnProperty(name = "payguard.ai.enabled", havingValue = "false")

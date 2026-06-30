@@ -7,9 +7,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 /**
  * Uygulama giriş noktası.
  *
- * .NET karşılığı: PayGuard.Internal.API/Program.cs + Startup.cs
- * - @SpringBootApplication: component-scan + auto-configuration + DI konteyneri (Autofac karşılığı)
- * - @EnableScheduling: Outbox relay'in periyodik çalışması için (.NET BackgroundService karşılığı)
+ * - @SpringBootApplication: component-scan + auto-configuration + DI konteyneri
+ * - @EnableScheduling: Outbox relay'in periyodik çalışması için
  */
 @SpringBootApplication
 @EnableScheduling

@@ -14,7 +14,6 @@ import java.io.IOException;
 /**
  * Her istekte 'X-Tenant' header'ından kiracıyı okuyup TenantContext'e koyar, istek sonunda temizler.
  *
- * .NET karşılığı: tenant'ı request'ten çözen middleware (ITenantProvider'ı besler).
  * Tek-kiracı modunda zararsızdır (routing DataSource yoksa thread-local kullanılmaz).
  * Güvenlik filtresinden ÖNCE çalışsın diye yüksek öncelikli.
  */

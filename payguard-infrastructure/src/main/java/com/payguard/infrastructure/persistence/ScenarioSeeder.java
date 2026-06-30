@@ -12,9 +12,8 @@ import java.util.List;
 /**
  * Başlangıçta örnek senaryoları DB'ye ekler (tablo boşsa).
  *
- * .NET karşılığı: EF Core seed data (HasData) / migration ile başlangıç verisi.
- * H2 in-memory her açılışta boş başladığından, akışı uçtan uca denenebilir kılmak için seed ediyoruz.
- * Üretimde bu sınıf kaldırılır; senaryolar yönetim ekranından (RulesController karşılığı) girilir.
+ * In-memory DB her açılışta boş başladığından, akışı uçtan uca denenebilir kılmak için seed ediyoruz.
+ * Üretimde bu sınıf kaldırılır; senaryolar yönetim arayüzünden girilir.
  */
 @Component
 public class ScenarioSeeder implements ApplicationRunner {
@@ -33,7 +32,7 @@ public class ScenarioSeeder implements ApplicationRunner {
             return; // zaten yüklenmiş
         }
 
-        // CARD senaryoları (önceki hard-coded ScenarioRepository ile aynı mantık)
+        // CARD senaryoları
         ScenarioRow highAmount = new ScenarioRow(
                 "Yüksek Tutar", ProductType.CARD, 1, 1, "REJECT",
                 List.of(new RuleRow("Tutar eşiği aşıyor", RuleType.SIMPLE, "amount.doubleValue() > threshold")));

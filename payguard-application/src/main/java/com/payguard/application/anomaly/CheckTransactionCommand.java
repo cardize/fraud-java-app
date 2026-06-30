@@ -8,8 +8,6 @@ import java.util.UUID;
 
 /**
  * Bir işlemin anomali olup olmadığını sorgulayan komut.
- *
- * .NET karşılığı: PayGuard.Application.AI/Handlers/AnomalyDetections/Commands/CheckTransactionCommand.
  */
 public record CheckTransactionCommand(
         UUID transactionId,

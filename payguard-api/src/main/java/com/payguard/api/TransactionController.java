@@ -12,12 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * İşlem (fraud) uç noktaları.
  *
- * .NET karşılığı: PayGuard.Internal.API/Controllers/TransactionsController.cs
- * - @RestController  -> [ApiController]
- * - @RequestMapping  -> [Route("api/v1/transactions")]
- * - @PostMapping     -> [HttpPost("get-fraud-response-for-card")]
- *
- * Controller ince kalır: sadece Mediator'a delege eder (.NET'teki Mediator.Send deseni).
+ * Controller ince kalır: sadece Mediator'a delege eder.
  * İleride PF / PayCell / TrKart uç noktaları aynı şekilde eklenir.
  */
 @RestController

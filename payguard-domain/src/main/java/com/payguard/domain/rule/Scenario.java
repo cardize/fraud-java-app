@@ -6,8 +6,6 @@ import java.util.List;
 /**
  * Bir senaryo: sıralı/öncelikli kurallar kümesi ve tetiklenince dönecek fraud yanıt kodu.
  *
- * .NET karşılığı: PayGuard.Domain/AggregateRoots/ScenarioDefinition.cs + ScenarioInfo (motor modeli).
- *
  * @param id              senaryo kimliği
  * @param name            ad
  * @param priority        öncelik (küçük = önce; birden çok hit olursa en yüksek öncelikli kazanır)

@@ -14,9 +14,6 @@ import java.io.IOException;
 
 /**
  * Her istekte Bearer token'ı doğrulayıp SecurityContext'e kimlik koyan filtre.
- *
- * .NET karşılığı: JwtBearer middleware (UseAuthentication) — gelen token'ı doğrular,
- * geçerliyse ClaimsPrincipal'ı set eder.
  */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {

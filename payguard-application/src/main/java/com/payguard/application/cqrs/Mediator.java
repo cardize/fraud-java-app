@@ -9,11 +9,8 @@ import java.util.Map;
 /**
  * Komutu uygun handler'a yönlendiren basit aracı (dispatcher).
  *
- * .NET karşılığı: MediatR'ın IMediator.Send(command) mekanizması.
- * Controller "Mediator.Send(command)" çağırır; doğru handler otomatik bulunur.
- *
- * Spring tüm CommandHandler bean'lerini constructor'a enjekte eder (DI),
- * biz de komut tipi -> handler eşlemesini bir map'te tutarız.
+ * Controller send(command) çağırır; doğru handler otomatik bulunur. Spring tüm CommandHandler
+ * bean'lerini constructor'a enjekte eder; komut tipi -> handler eşlemesi bir map'te tutulur.
  */
 @Component
 public class Mediator {

@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * Kimlik doğrulama (login) uç noktası — demo amaçlı token üretir.
  *
- * .NET karşılığı: bir Account/AuthController + token endpoint'i.
  * NOT: Kullanıcı/şifre doğrulaması burada basit tutuldu (sabit demo şifresi). Üretimde
  * kullanıcı deposu + şifre hash (BCrypt) + rol/claim yönetimi eklenir.
  */

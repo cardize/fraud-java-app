@@ -12,7 +12,7 @@
 
     <artifactId>payguard-application</artifactId>
     <name>PayGuard Application</name>
-    <description>CQRS handler'lar, port arayüzleri, iş akışı. .NET: PayGuard.Application</description>
+    <description>CQRS handler'lar, port arayüzleri, iş akışı</description>
 
     <dependencies>
         <!-- Sadece domain'e bağımlı (içe doğru). Altyapı (JPA, web) BİLMEZ. -->

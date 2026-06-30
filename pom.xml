@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <!-- Spring Boot BOM + plugin yönetimi. .NET'te bu rolü Directory.Build.props + Prisma.* meta paketi üstlenirdi. -->
+    <!-- Spring Boot BOM + plugin yönetimi -->
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
@@ -16,10 +16,10 @@
     <artifactId>payguard-parent</artifactId>
     <version>0.1.0</version>
     <packaging>pom</packaging>
-    <name>PayGuard Parent (Java port)</name>
-    <description>Çok modüllü Maven yapısı — .NET solution'ın katman bazlı karşılığı</description>
+    <name>PayGuard Parent</name>
+    <description>Çok modüllü Maven yapısı — katman bazlı</description>
 
-    <!-- .NET solution (.sln) karşılığı: hangi alt projeler derlenecek -->
+    <!-- Hangi alt modüller derlenecek -->
     <modules>
         <module>payguard-domain</module>
         <module>payguard-application</module>

@@ -13,8 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Tek bir kuralı FraudParameters üzerinde değerlendirir.
  *
- * .NET karşılığı: PayGRulesEngine/Rules/IRuleExecutor + ComplexRuleExecuter (Microsoft RulesEngine).
- * Burada SpEL kullanıyoruz: kural ifadesi "amount > threshold" gibi bir string;
+ * SpEL kullanılır: kural ifadesi "amount > threshold" gibi bir string;
  * FraudParameters'ın getter'ları ifade içinde değişken gibi erişilebilir olur.
  *
  * İfadeler derlenip cache'lenir (her çağrıda parse etmemek için) — performans dostu.

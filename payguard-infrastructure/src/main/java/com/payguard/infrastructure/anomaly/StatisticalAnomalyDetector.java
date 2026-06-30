@@ -12,13 +12,10 @@ import java.time.ZoneOffset;
 
 /**
  * İstatistiksel + kural tabanlı hibrit anomali tespiti.
+ * Hibrit skor: finalScore = (zScore + frekans + zaman + model) / 4.
  *
- * .NET karşılığı: PayGuard.Application.AI/Services/Implementations/AnomalyDetectionService.
- * .NET'teki hibrit skor mantığı birebir: finalScore = (zScore + frekans + zaman + model) / 4.
- *
- * NOT: Gerçek ML modeli (ML.NET) burada saf-istatistikle taklit edildi (ağsız/model dosyasız
- * çalışsın diye). DJL/ONNX modeli takmak için: modelScore'u model çıktısıyla değiştir
- * (predictionEngine.Predict karşılığı) — arayüz/akış aynı kalır.
+ * NOT: Gerçek ML modeli burada saf-istatistikle temsil edilir. Bir model (örn. DJL/ONNX) takmak için
+ * modelScore'u model çıktısıyla değiştirmek yeterli — arayüz/akış aynı kalır.
  *
  * Aktif olma koşulu: payguard.ai.enabled=true (varsayılan). false ise {@link NoOpAnomalyDetector} devreye girer.
  */
@@ -39,7 +36,7 @@ public class StatisticalAnomalyDetector implements AnomalyDetector {
     public AnomalyResult check(FraudTransaction tx) {
         CardStatistics stats = statisticsStore.getOrCreate(tx.shadowCardNo());
 
-        // Model henüz "öğrenmediyse" (yeterli geçmiş yok) ihtiyatlı davran — .NET'teki (model==null -> 1.0) mantığı
+        // Model henüz "öğrenmediyse" (yeterli geçmiş yok) ihtiyatlı davran
         if (stats.count() < 5) {
             stats.update(tx.amount(), tx.transactionDate());
             return new AnomalyResult(true, 1.0, "Yetersiz geçmiş — ihtiyaten şüpheli");
@@ -56,7 +53,7 @@ public class StatisticalAnomalyDetector implements AnomalyDetector {
 
         double finalScore = (zScore + frequencyScore + timeScore + modelScore) / 4.0;
 
-        // .NET IsAnomalousTransaction kuralları
+        // Ek sezgisel anomali kuralları
         boolean anomaly = finalScore > SCORE_THRESHOLD
                 || (mean > 0 && tx.amount() > mean * 3)
                 || (hourOfDay < 6 && tx.amount() > mean * 2)

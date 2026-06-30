@@ -12,10 +12,10 @@
 
     <artifactId>payguard-gateway</artifactId>
     <name>PayGuard Gateway</name>
-    <description>API Gateway / reverse proxy. .NET: PayGuard.External.API (Ocelot)</description>
+    <description>API Gateway / reverse proxy</description>
 
     <dependencies>
-        <!-- Spring Cloud Gateway (Ocelot karşılığı). Reaktif (WebFlux) tabanlı; web starter EKLENMEZ. -->
+        <!-- Spring Cloud Gateway. Reaktif (WebFlux) tabanlı; web starter EKLENMEZ. -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-gateway</artifactId>

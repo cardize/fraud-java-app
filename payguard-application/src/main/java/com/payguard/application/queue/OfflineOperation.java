@@ -3,9 +3,7 @@ package com.payguard.application.queue;
 import java.util.UUID;
 
 /**
- * Kuyruğa atılan offline iş mesajı.
- *
- * .NET karşılığı: PayGuard.Application/Mq/Requests/ProcessOfflineScenariosRequest.
+ * Kuyruğa/outbox'a atılan offline iş mesajı.
  */
 public record OfflineOperation(
         UUID transactionId,

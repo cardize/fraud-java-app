@@ -7,8 +7,6 @@ import com.payguard.domain.shared.ProductType;
  *
  * Port APPLICATION'da; implementasyonlar (SpEL/DB kullanan) INFRASTRUCTURE'dadır.
  * Böylece application, kural motorunun teknik detayını bilmez.
- *
- * .NET karşılığı: PayGRulesEngine/Processors/Interfaces/IScenarioProcessor.
  */
 public interface ScenarioProcessor {
 

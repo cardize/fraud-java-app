@@ -15,9 +15,6 @@ import java.util.List;
 /**
  * Senaryoları DB'den yükler ve persistence modelini (ScenarioRow/RuleRow) domain modeline
  * (Scenario/Rule record) çevirir.
- *
- * .NET karşılığı: RuleDapperRepository'nin senaryo yükleme + DTO'ya map etme kısmı.
- * Artık sabit veri DEĞİL, gerçek tablodan okunur (önceki sürümdeki hard-coded liste kaldırıldı).
  */
 @Component
 public class ScenarioCatalog {
@@ -29,8 +26,8 @@ public class ScenarioCatalog {
     }
 
     /**
-     * Senaryoları yükler; sonuç "scenarios" cache'inde (ürün tipi + modül) saklanır.
-     * .NET karşılığı: senaryo listesinin Redis/CacheList'te tutulması (her işlemde DB'ye gitmemek için).
+     * Senaryoları yükler; sonuç "scenarios" cache'inde (ürün tipi + modül) saklanır
+     * (her işlemde DB'ye gitmemek için).
      */
     @Cacheable(value = "scenarios", key = "#productType + '-' + #module")
     public List<Scenario> loadOnlineScenarios(ProductType productType, int module) {
@@ -41,7 +38,6 @@ public class ScenarioCatalog {
 
     /**
      * Tüm senaryo cache'ini temizler (kural/senaryo değişince çağrılır).
-     * .NET karşılığı: CacheController + CacheSynchronization ile cache invalidation.
      */
     @CacheEvict(value = "scenarios", allEntries = true)
     public void evictAll() {

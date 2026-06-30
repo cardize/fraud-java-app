@@ -19,8 +19,7 @@ import java.util.List;
 /**
  * Senaryo tablosu satırı (JPA entity / persistence modeli).
  *
- * .NET karşılığı: PayGuard.Domain/AggregateRoots/ScenarioDefinition.cs + ScenarioDefinitionEntityConfiguration.
- * Bir senaryonun BİRDEN ÇOK kuralı vardır → @OneToMany (EF'teki HasMany karşılığı).
+ * Bir senaryonun BİRDEN ÇOK kuralı vardır → @OneToMany.
  */
 @Entity
 @Table(name = "scenarios")

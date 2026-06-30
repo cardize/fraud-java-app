@@ -17,7 +17,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * SpEL tabanlı kural değerlendirmesinin testi.
- * .NET karşılığı: TestComplexRuleCommand / ScenarioTests mantığı.
  */
 class RuleEvaluatorTest {
 

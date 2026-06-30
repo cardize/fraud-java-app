@@ -6,8 +6,6 @@ import org.springframework.stereotype.Component;
 
 /**
  * TrKart senaryo işlemcisi.
- *
- * .NET karşılığı: TrKart ürün-tipi processor'ı.
  */
 @Component
 public class TrKartScenarioProcessor extends BaseScenarioProcessor {

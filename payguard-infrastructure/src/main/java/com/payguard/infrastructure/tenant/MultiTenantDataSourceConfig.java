@@ -7,41 +7,53 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
 
 import javax.sql.DataSource;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
  * 'multitenant' profili aktifken DataSource'u tenant'a göre yönlendiren yapılandırma.
  *
- * .NET karşılığı: tenant başına ayrı connection string (TenantDatabaseSettings / PayGuardDbContext seçimi).
- * Profil kapalıyken bu sınıf devre dışıdır → Spring Boot'un tek-DB otomatik yapılandırması kullanılır
- * (varsayılan/test çalışması etkilenmez).
+ * Profil kapalıyken bu sınıf devre dışıdır → Spring Boot'un tek-DB otomatik yapılandırması kullanılır.
  *
- * SINIRLAMA (öğrenme dilimi): Flyway/Hibernate şema oluşturma yalnızca varsayılan hedefe uygulanır.
- * Gerçek çok-kiracıda her tenant DB'sine ayrı migration koşulur (Flyway'i her DataSource için tetikleyerek).
+ * Şema yönetimi artık her tenant DB'sine ayrı ayrı uygulanır (bkz. {@link MultiTenantFlywayMigrator}).
  */
 @Configuration
 @Profile("multitenant")
 public class MultiTenantDataSourceConfig {
 
+    /**
+     * Tüm tenant DataSource'ları (varsayılan dahil). Tek yerde üretilir; hem routing hem migrator kullanır.
+     * NOT: Map<String,DataSource> tipinde TEK bir bean'dir; içindeki DataSource'lar ayrı bean DEĞİL —
+     * böylece JPA için tek (@Primary) DataSource kalır, ambiguity olmaz.
+     */
+    @Bean
+    public Map<String, DataSource> tenantDataSources() {
+        Map<String, DataSource> map = new LinkedHashMap<>();
+        map.put("default", h2("payguard_default"));
+        map.put("alpha", h2("payguard_alpha"));
+        map.put("beta", h2("payguard_beta"));
+        return map;
+    }
+
     @Bean
     @Primary
     public DataSource dataSource() {
-        // Demo: iki tenant + varsayılan, hepsi ayrı H2 in-memory DB.
-        // Üretimde bu harita konfigürasyondan/secret'tan (tenant -> connection string) doldurulur.
-        DataSource defaultDs = h2("payguard_default");
-        DataSource alpha = h2("payguard_alpha");
-        DataSource beta = h2("payguard_beta");
+        Map<String, DataSource> tenants = tenantDataSources();   // @Configuration proxy → aynı singleton
 
-        Map<Object, Object> targets = new HashMap<>();
-        targets.put("alpha", alpha);
-        targets.put("beta", beta);
+        Map<Object, Object> targets = new java.util.HashMap<>();
+        targets.put("alpha", tenants.get("alpha"));
+        targets.put("beta", tenants.get("beta"));
 
         TenantRoutingDataSource routing = new TenantRoutingDataSource();
-        routing.setDefaultTargetDataSource(defaultDs);   // tenant yoksa buraya gider
+        routing.setDefaultTargetDataSource(tenants.get("default"));   // tenant yoksa buraya
         routing.setTargetDataSources(targets);
         routing.afterPropertiesSet();
         return routing;
+    }
+
+    @Bean
+    public MultiTenantFlywayMigrator multiTenantFlywayMigrator() {
+        return new MultiTenantFlywayMigrator(tenantDataSources());
     }
 
     private DataSource h2(String dbName) {

@@ -6,8 +6,6 @@ import org.springframework.stereotype.Component;
 
 /**
  * Kart (CARD) senaryo işlemcisi.
- *
- * .NET karşılığı: PayGRulesEngine/Processors/Implementations/Card/CardScenarioProcessor.cs
  * Tüm motor mantığı {@link BaseScenarioProcessor}'da; burada yalnızca ürün tipi belirtilir.
  */
 @Component

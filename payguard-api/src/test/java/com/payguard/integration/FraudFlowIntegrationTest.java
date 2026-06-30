@@ -16,7 +16,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * Uçtan uca entegrasyon testi: gerçek Spring context + H2 + Flyway + seeder + güvenlik.
  *
- * .NET karşılığı: WebApplicationFactory ile yapılan integration test'ler.
  * Çalışırken: Flyway şemayı kurar, ScenarioSeeder örnek senaryoları yükler, JWT güvenliği aktiftir.
  */
 @SpringBootTest

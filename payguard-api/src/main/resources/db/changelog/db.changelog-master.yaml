@@ -1,0 +1,89 @@
+# Liquibase master changelog — Flyway V1__init.sql ile AYNI şemayı kurar (alternatif araç).
+# 'liquibase' profiliyle aktif: spring.liquibase.enabled=true, spring.flyway.enabled=false.
+
+databaseChangeLog:
+  - changeSet:
+      id: 1-create-transactions
+      author: payguard
+      changes:
+        - createTable:
+            tableName: transactions
+            columns:
+              - column: { name: id, type: UUID, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: message_id, type: BIGINT }
+              - column: { name: module, type: INT }
+              - column: { name: shadow_card_no, type: VARCHAR(64) }
+              - column: { name: amount, type: "DECIMAL(19,2)" }
+              - column: { name: merchant_id, type: VARCHAR(64) }
+              - column: { name: transaction_date, type: "TIMESTAMP WITH TIME ZONE" }
+              - column: { name: control_code, type: VARCHAR(20) }
+              - column: { name: fraud_response_code, type: VARCHAR(40) }
+              - column: { name: latest_request, type: BOOLEAN }
+        - createIndex:
+            indexName: idx_tx_message_module
+            tableName: transactions
+            columns:
+              - column: { name: message_id }
+              - column: { name: module }
+
+  - changeSet:
+      id: 2-create-scenarios
+      author: payguard
+      changes:
+        - createTable:
+            tableName: scenarios
+            columns:
+              - column: { name: id, type: BIGINT, autoIncrement: true, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: name, type: VARCHAR(200) }
+              - column: { name: product_type, type: VARCHAR(20) }
+              - column: { name: module, type: INT }
+              - column: { name: priority, type: INT }
+              - column: { name: fraud_response_code, type: VARCHAR(40) }
+        - createIndex:
+            indexName: idx_scn_type_module
+            tableName: scenarios
+            columns:
+              - column: { name: product_type }
+              - column: { name: module }
+
+  - changeSet:
+      id: 3-create-rules
+      author: payguard
+      changes:
+        - createTable:
+            tableName: rules
+            columns:
+              - column: { name: id, type: BIGINT, autoIncrement: true, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: name, type: VARCHAR(200) }
+              - column: { name: type, type: VARCHAR(20) }
+              - column: { name: expression, type: VARCHAR(1000) }
+              - column: { name: scenario_id, type: BIGINT }
+        - addForeignKeyConstraint:
+            constraintName: fk_rule_scenario
+            baseTableName: rules
+            baseColumnNames: scenario_id
+            referencedTableName: scenarios
+            referencedColumnNames: id
+
+  - changeSet:
+      id: 4-create-outbox
+      author: payguard
+      changes:
+        - createTable:
+            tableName: outbox_messages
+            columns:
+              - column: { name: id, type: BIGINT, autoIncrement: true, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: type, type: VARCHAR(60) }
+              - column: { name: transaction_id, type: UUID }
+              - column: { name: module, type: INT }
+              - column: { name: fraud_response_code, type: VARCHAR(40) }
+              - column: { name: tenant, type: VARCHAR(60) }
+              - column: { name: status, type: VARCHAR(20) }
+              - column: { name: created_at, type: "TIMESTAMP WITH TIME ZONE", constraints: { nullable: false } }
+              - column: { name: processed_at, type: "TIMESTAMP WITH TIME ZONE" }
+        - createIndex:
+            indexName: idx_outbox_status_created
+            tableName: outbox_messages
+            columns:
+              - column: { name: status }
+              - column: { name: created_at }
