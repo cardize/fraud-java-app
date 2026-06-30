@@ -28,13 +28,16 @@ public class OutboxRelay {
     private final OutboxJpaRepository repository;
     private final MessagePublisher messagePublisher;
     private final String destination;
+    private final int retentionDays;
 
     public OutboxRelay(OutboxJpaRepository repository,
                        MessagePublisher messagePublisher,
-                       @Value("${payguard.outbox.destination:payguard.offline-operations}") String destination) {
+                       @Value("${payguard.outbox.destination:payguard.offline-operations}") String destination,
+                       @Value("${payguard.outbox.retention-days:7}") int retentionDays) {
         this.repository = repository;
         this.messagePublisher = messagePublisher;
         this.destination = destination;
+        this.retentionDays = retentionDays;
     }
 
     @Scheduled(fixedDelayString = "${payguard.outbox.poll-interval-ms:5000}")
@@ -60,6 +63,20 @@ public class OutboxRelay {
         if (!processed.isEmpty()) {
             repository.saveAll(processed);
             log.info("Outbox: {}/{} mesaj işlendi", processed.size(), batch.size());
+        }
+    }
+
+    /**
+     * Eski PROCESSED kayıtları temizler — outbox tablosunun sınırsız büyümesini önler.
+     * Günlük bir kez çalışır (relay döngüsünden çok daha seyrek; bu sadece bakım/retention işi).
+     */
+    @Scheduled(fixedDelayString = "${payguard.outbox.cleanup-interval-ms:86400000}")
+    @Transactional
+    public void cleanupProcessed() {
+        Instant cutoff = Instant.now().minusSeconds(retentionDays * 86_400L);
+        int deleted = repository.deleteProcessedBefore(cutoff);
+        if (deleted > 0) {
+            log.info("Outbox: {} eski PROCESSED kayıt temizlendi (retention={} gün)", deleted, retentionDays);
         }
     }
 

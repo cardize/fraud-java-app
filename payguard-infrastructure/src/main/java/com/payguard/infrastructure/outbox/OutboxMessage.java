@@ -66,4 +66,6 @@ public class OutboxMessage {
     public String getFraudResponseCode() { return fraudResponseCode; }
     public String getTenant() { return tenant; }
     public OutboxStatus getStatus() { return status; }
+    public Instant getCreatedAt() { return createdAt; }
+    public Instant getProcessedAt() { return processedAt; }
 }

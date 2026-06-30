@@ -81,6 +81,8 @@ payguard:
     demo-password: "${PAYGUARD_DEMO_PASSWORD:payguard123}"
   outbox:
     poll-interval-ms: 5000
+    cleanup-interval-ms: 86400000   # 24 saat — PROCESSED kayıt temizliği
+    retention-days: 7               # PROCESSED kayıtlar 7 günden eski ise silinir
     destination: "payguard.offline-operations"
     # Yayımcı: logging (varsayılan, broker'sız) | kafka | rabbit
     publisher: logging

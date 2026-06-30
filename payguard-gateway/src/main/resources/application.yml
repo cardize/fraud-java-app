@@ -19,13 +19,17 @@ spring:
           uri: http://localhost:8080
           predicates:
             - Path=/actuator/**
-      # Basit global CORS
+      # CORS: kaynak listesi açıkça belirtilir. "*" + allowCredentials kombinasyonu tarayıcılarca
+      # zaten reddedilir; ama "*" origin/method/header üçü birden üretimde gereksiz geniş bir
+      # yüzey açar. Gerçek origin'leri PAYGUARD_ALLOWED_ORIGINS ile (virgülle ayrık) verin.
       globalcors:
         cors-configurations:
           '[/**]':
-            allowedOrigins: "*"
-            allowedMethods: "*"
-            allowedHeaders: "*"
+            allowedOriginPatterns: "${PAYGUARD_ALLOWED_ORIGINS:http://localhost:*}"
+            allowedMethods: [GET, POST, PUT, DELETE, OPTIONS]
+            allowedHeaders: [Authorization, Content-Type, X-Tenant]
+            allowCredentials: true
+            maxAge: 3600
 
 management:
   endpoints:

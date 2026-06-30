@@ -119,6 +119,8 @@ mvn -Dtest=ContainersFraudFlowTest test    # Postgres+Kafka (Docker gerekir)
 | `payguard.persistence.transaction-store` | `jpa` (vars.) / `jdbc` | İşlem yazımı: ORM mi ham SQL mi |
 | `payguard.ai.enabled` | `true` (vars.) / `false` | Anomali tespiti açık/kapalı |
 | `payguard.outbox.publisher` | `logging` (vars.) / `kafka` / `rabbit` | Outbox yayım hedefi |
+| `payguard.outbox.retention-days` | int (vars. 7) | PROCESSED outbox kayıtlarının saklama süresi |
+| `PAYGUARD_ALLOWED_ORIGINS` (gateway) | virgüllü origin listesi | CORS izinli kaynaklar (vars. yalnızca localhost) |
 | `spring.cache.type` | `caffeine` (vars.) / `redis` | Cache sağlayıcı (boyut+TTL sınırlı) |
 | `payguard.scenario.parallel` / `max-parallelism` | bool / int | Senaryo paralel yürütme |
 | `payguard.security.jwt-secret` / `demo-password` | string | JWT anahtarı / login demo şifresi |
