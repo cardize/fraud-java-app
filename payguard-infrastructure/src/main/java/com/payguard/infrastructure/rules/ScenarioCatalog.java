@@ -26,10 +26,18 @@ public class ScenarioCatalog {
     }
 
     /**
-     * Senaryoları yükler; sonuç "scenarios" cache'inde (ürün tipi + modül) saklanır
+     * Senaryoları yükler; sonuç "scenarios" cache'inde (kiracı + ürün tipi + modül) saklanır
      * (her işlemde DB'ye gitmemek için).
+     *
+     * GÜVENLİK/BUG DÜZELTMESİ: Önceki anahtar yalnızca productType+module idi — TENANT'I
+     * İÇERMİYORDU. multitenant profilinde bu, çapraz-kiracı cache zehirlenmesine yol açardı:
+     * Tenant A için yüklenen kural seti cache'e yazılır, hemen ardından gelen Tenant B isteği
+     * AYNI anahtardan (CARD-1 gibi) cache hit alıp A'nın kurallarını B'nin işlemine uygulardı
+     * (yanlış fraud kararı + olası uyumluluk ihlali). Anahtar artık TenantContext'ten okunan
+     * geçerli kiracıyı da içeriyor.
      */
-    @Cacheable(value = "scenarios", key = "#productType + '-' + #module")
+    @Cacheable(value = "scenarios",
+            key = "T(com.payguard.infrastructure.tenant.TenantContext).currentOrDefault() + '-' + #productType + '-' + #module")
     public List<Scenario> loadOnlineScenarios(ProductType productType, int module) {
         return scenarioJpaRepository.findByProductTypeAndModule(productType, module).stream()
                 .map(this::toDomain)

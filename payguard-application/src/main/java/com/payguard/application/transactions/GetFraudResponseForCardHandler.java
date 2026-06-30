@@ -6,6 +6,7 @@ import com.payguard.application.fraud.FraudParameters;
 import com.payguard.application.fraud.ScenarioService;
 import com.payguard.application.queue.OfflineOperation;
 import com.payguard.application.queue.OfflineOperationPublisher;
+import com.payguard.application.tenant.TenantProvider;
 import com.payguard.application.transactions.dto.FraudResponseDto;
 import com.payguard.domain.shared.ControlCode;
 import com.payguard.domain.shared.ProductType;
@@ -34,15 +35,18 @@ public class GetFraudResponseForCardHandler
     private final ScenarioService scenarioService;
     private final OfflineOperationPublisher offlinePublisher;
     private final MeterRegistry meterRegistry;
+    private final TenantProvider tenantProvider;
 
     public GetFraudResponseForCardHandler(TransactionStore transactionStore,
                                           ScenarioService scenarioService,
                                           OfflineOperationPublisher offlinePublisher,
-                                          MeterRegistry meterRegistry) {
+                                          MeterRegistry meterRegistry,
+                                          TenantProvider tenantProvider) {
         this.transactionStore = transactionStore;
         this.scenarioService = scenarioService;
         this.offlinePublisher = offlinePublisher;
         this.meterRegistry = meterRegistry;
+        this.tenantProvider = tenantProvider;
     }
 
     private void countDecision(String code) {
@@ -87,7 +91,10 @@ public class GetFraudResponseForCardHandler
         transactionStore.save(tx);
 
         // 5) Offline işlemler — outbox'a yazılır (bu @Transactional içinde, iş kaydıyla atomik)
-        offlinePublisher.publish(new OfflineOperation(transactionId, cmd.module(), fraudResponseCode, "default"));
+        // BUG DÜZELTMESİ: önceden tenant her zaman sabit "default" yazılıyordu; X-Tenant header'ı
+        // ile gelen gerçek kiracı bilgisi yok sayılıyordu. Artık TenantProvider port'undan okunuyor.
+        offlinePublisher.publish(new OfflineOperation(
+                transactionId, cmd.module(), fraudResponseCode, tenantProvider.currentTenant()));
 
         countDecision(fraudResponseCode);
         return ApiResult.ok(new FraudResponseDto(transactionId, fraudResponseCode));

@@ -21,6 +21,12 @@ public final class TenantContext {
         return CURRENT.get();
     }
 
+    /** get()'in null-safe hali; tenant set edilmemişse (tek-kiracı modu) "default" döner. */
+    public static String currentOrDefault() {
+        String tenant = CURRENT.get();
+        return tenant != null ? tenant : "default";
+    }
+
     public static void clear() {
         CURRENT.remove();
     }
