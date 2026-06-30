@@ -3,6 +3,7 @@ package com.payguard.api;
 import com.payguard.application.anomaly.AnomalyResult;
 import com.payguard.application.anomaly.CheckTransactionCommand;
 import com.payguard.application.cqrs.Mediator;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,7 +24,7 @@ public class AIController {
     }
 
     @PostMapping("/check-transaction")
-    public ApiResult<AnomalyResult> checkTransaction(@RequestBody CheckTransactionCommand command) {
+    public ApiResult<AnomalyResult> checkTransaction(@Valid @RequestBody CheckTransactionCommand command) {
         return mediator.send(command);
     }
 }

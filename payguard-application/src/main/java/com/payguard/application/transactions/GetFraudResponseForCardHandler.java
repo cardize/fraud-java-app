@@ -10,6 +10,7 @@ import com.payguard.application.transactions.dto.FraudResponseDto;
 import com.payguard.domain.shared.ControlCode;
 import com.payguard.domain.shared.ProductType;
 import com.payguard.domain.transaction.Transaction;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,13 +33,20 @@ public class GetFraudResponseForCardHandler
     private final TransactionStore transactionStore;
     private final ScenarioService scenarioService;
     private final OfflineOperationPublisher offlinePublisher;
+    private final MeterRegistry meterRegistry;
 
     public GetFraudResponseForCardHandler(TransactionStore transactionStore,
                                           ScenarioService scenarioService,
-                                          OfflineOperationPublisher offlinePublisher) {
+                                          OfflineOperationPublisher offlinePublisher,
+                                          MeterRegistry meterRegistry) {
         this.transactionStore = transactionStore;
         this.scenarioService = scenarioService;
         this.offlinePublisher = offlinePublisher;
+        this.meterRegistry = meterRegistry;
+    }
+
+    private void countDecision(String code) {
+        meterRegistry.counter("payguard.fraud.decisions", "code", code).increment();
     }
 
     @Override
@@ -64,6 +72,7 @@ public class GetFraudResponseForCardHandler
         if (controlCode == ControlCode.DUPLICATE) {
             tx.setFraudResponseCode("DUPLICATE");
             transactionStore.save(tx);
+            countDecision("DUPLICATE");
             return ApiResult.ok(new FraudResponseDto(transactionId, "DUPLICATE"), "Duplicate işlem");
         }
 
@@ -80,6 +89,7 @@ public class GetFraudResponseForCardHandler
         // 5) Offline işlemler — outbox'a yazılır (bu @Transactional içinde, iş kaydıyla atomik)
         offlinePublisher.publish(new OfflineOperation(transactionId, cmd.module(), fraudResponseCode, "default"));
 
+        countDecision(fraudResponseCode);
         return ApiResult.ok(new FraudResponseDto(transactionId, fraudResponseCode));
     }
 

@@ -1,6 +1,8 @@
 package com.payguard.api;
 
 import com.payguard.api.security.JwtService;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -26,11 +28,11 @@ public class AuthController {
         this.demoPassword = demoPassword;
     }
 
-    public record LoginRequest(String username, String password) {}
+    public record LoginRequest(@NotBlank String username, @NotBlank String password) {}
     public record TokenResponse(String token) {}
 
     @PostMapping("/login")
-    public ApiResult<TokenResponse> login(@RequestBody LoginRequest request) {
+    public ApiResult<TokenResponse> login(@Valid @RequestBody LoginRequest request) {
         if (request.username() == null || !demoPassword.equals(request.password())) {
             return ApiResult.fail("Geçersiz kullanıcı adı veya şifre");
         }
