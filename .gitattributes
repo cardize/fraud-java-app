@@ -1,0 +1,10 @@
+# Tüm metin dosyalarını repoda LF olarak normalize et
+* text=auto eol=lf
+
+# İkili dosyalar (dokunma)
+*.jar binary
+*.zip binary
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
