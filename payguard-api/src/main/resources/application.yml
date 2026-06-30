@@ -39,13 +39,20 @@ spring:
     console:
       enabled: true         # http://localhost:8080/h2-console ile DB'yi gör
 
-  # Cache sağlayıcısı. Varsayılan: in-memory (ConcurrentMap) — Redis kurmadan çalışır.
+  # Cache sağlayıcısı. Varsayılan: Caffeine (sınırlı boyut + TTL) — Redis kurmadan çalışır.
   # Redis için: uygulamayı 'redis' profiliyle başlat (--spring.profiles.active=redis), bkz. application-redis.yml
   cache:
-    type: simple
+    type: caffeine
+    caffeine:
+      spec: maximumSize=1000,expireAfterWrite=10m
+
+  # Düzgün kapanış: yeni istek kabul edilmez, devam edenler tamamlanır (deploy güvenliği).
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
 
 server:
   port: 8080
+  shutdown: graceful
 
 # Senaryo motoru ayarları
 payguard:

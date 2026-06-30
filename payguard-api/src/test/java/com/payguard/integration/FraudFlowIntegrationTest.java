@@ -78,6 +78,20 @@ class FraudFlowIntegrationTest {
                 .andExpect(jsonPath("$.data.anomaly").value(true));
     }
 
+    @Test
+    void fraud_gecersiz_govde_400_doner() throws Exception {
+        String token = login();
+        // shadowCardNo boş (@NotBlank) + amount negatif (@DecimalMin) -> doğrulama hatası
+        String invalid = "{\"module\":1,\"transactionMessageId\":1001,\"shadowCardNo\":\"\","
+                + "\"amount\":-5,\"merchantId\":\"M1\",\"transactionDate\":\"2026-01-01T03:00:00Z\"}";
+        mockMvc.perform(post("/api/v1/transactions/get-fraud-response-for-card")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(invalid))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false));
+    }
+
     private String cardRequest(int amount) {
         return "{\"module\":1,\"transactionMessageId\":1001,\"shadowCardNo\":\"CARD123\",\"amount\":" + amount
                 + ",\"merchantId\":\"MERCH1\",\"transactionDate\":\"2026-01-01T03:00:00Z\"}";

@@ -32,6 +32,11 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-cache</artifactId>
         </dependency>
+        <!-- Caffeine: sınırlı boyut + TTL'li yüksek performanslı yerel cache (varsayılan sağlayıcı) -->
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
         <!-- Redis cache sağlayıcısı.
              Varsayılan cache.type=simple olduğundan bağlantı denenmez; 'redis' profiliyle aktif olur. -->
         <dependency>
