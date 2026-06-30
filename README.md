@@ -1,6 +1,6 @@
 # PayGuard
 
-Java 21 + Spring Boot ile yazılmış, çok modüllü bir **ödeme sahtekarlığı (fraud) tespit platformu**.
+Java 21 + Spring Boot ile yazılmış, çok modüllü bir **fraud tespit platformu**.
 Gelen işlemleri kural/senaryo motoru ve istatistiksel anomali tespitiyle değerlendirir; kararı senkron
 döner, ağır işleri kalıcı bir outbox üzerinden asenkron yürütür.
 
