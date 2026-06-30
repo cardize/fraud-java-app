@@ -40,6 +40,7 @@ infrastructure'dadır:
 ## Teknoloji Yığını
 - **Java 21**, **Spring Boot 3.3**, **Maven** (çok modül)
 - **Spring Web** (REST), **Spring Security + JWT** (jjwt), **springdoc-openapi** (Swagger UI)
+- **Bucket4j** (login rate limiting), HSTS/clickjacking/referrer-policy başlıkları
 - **Spring Data JPA / Hibernate**, **JdbcTemplate** (hot-path)
 - **SpEL** (kural değerlendirme), **Spring Cache** (Redis opsiyonel)
 - **Flyway** (varsayılan) / **Liquibase** (alternatif) — şema migration
@@ -118,7 +119,7 @@ mvn -Dtest=ContainersFraudFlowTest test    # Postgres+Kafka (Docker gerekir)
 | `payguard.persistence.transaction-store` | `jpa` (vars.) / `jdbc` | İşlem yazımı: ORM mi ham SQL mi |
 | `payguard.ai.enabled` | `true` (vars.) / `false` | Anomali tespiti açık/kapalı |
 | `payguard.outbox.publisher` | `logging` (vars.) / `kafka` / `rabbit` | Outbox yayım hedefi |
-| `spring.cache.type` | `simple` (vars.) / `redis` | Cache sağlayıcı |
+| `spring.cache.type` | `caffeine` (vars.) / `redis` | Cache sağlayıcı (boyut+TTL sınırlı) |
 | `payguard.scenario.parallel` / `max-parallelism` | bool / int | Senaryo paralel yürütme |
 | `payguard.security.jwt-secret` / `demo-password` | string | JWT anahtarı / login demo şifresi |
 | profil `multitenant` | aktif/değil | Tenant başına ayrı DB + per-tenant Flyway (`X-Tenant` header) |

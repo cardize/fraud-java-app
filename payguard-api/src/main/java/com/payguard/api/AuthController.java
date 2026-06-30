@@ -9,11 +9,15 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+
 /**
  * Kimlik doğrulama (login) uç noktası — demo amaçlı token üretir.
  *
  * NOT: Kullanıcı/şifre doğrulaması burada basit tutuldu (sabit demo şifresi). Üretimde
  * kullanıcı deposu + şifre hash (BCrypt) + rol/claim yönetimi eklenir.
+ * Brute-force'a karşı uç nokta {@link com.payguard.api.security.LoginRateLimitFilter} ile sınırlıdır.
  */
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -33,9 +37,23 @@ public class AuthController {
 
     @PostMapping("/login")
     public ApiResult<TokenResponse> login(@Valid @RequestBody LoginRequest request) {
-        if (request.username() == null || !demoPassword.equals(request.password())) {
+        if (!constantTimeEquals(demoPassword, request.password())) {
             return ApiResult.fail("Geçersiz kullanıcı adı veya şifre");
         }
         return ApiResult.ok(new TokenResponse(jwtService.issue(request.username())));
+    }
+
+    /**
+     * GÜVENLİK: String.equals erken çıkış yapar (ilk farklı karakterde durur) — bu, yanıt süresinden
+     * şifreyi karakter karakter çıkarmaya izin veren bir timing attack'a açıktır. MessageDigest.isEqual
+     * sabit zamanlıdır; karşılaştırma süresi şifrenin doğruluğuna bağlı olarak değişmez.
+     */
+    private boolean constantTimeEquals(String expected, String actual) {
+        if (actual == null) {
+            return false;
+        }
+        return MessageDigest.isEqual(
+                expected.getBytes(StandardCharsets.UTF_8),
+                actual.getBytes(StandardCharsets.UTF_8));
     }
 }

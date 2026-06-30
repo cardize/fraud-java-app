@@ -36,6 +36,12 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
+        <!-- Token-bucket rate limiting (login brute-force koruması) -->
+        <dependency>
+            <groupId>com.bucket4j</groupId>
+            <artifactId>bucket4j_jdk17-core</artifactId>
+            <version>8.10.1</version>
+        </dependency>
         <!-- JWT üret/doğrula (jjwt) -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>

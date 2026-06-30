@@ -16,6 +16,14 @@ spring:
     driver-class-name: org.h2.Driver
     username: sa
     password:
+    # Sanal thread'ler (yukarıda) çok sayıda eşzamanlı isteğe izin verir; DB havuzu BUNDAN BAĞIMSIZ
+    # ve sınırlı kalmalı — aksi halde DB az sayıda gerçek bağlantıyla boğulur. Havuz dolarsa istek
+    # sonsuza dek beklemek yerine 3 saniyede hızlıca başarısız olur (connection-timeout).
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 3000
+      max-lifetime: 1800000
 
   jpa:
     hibernate:
