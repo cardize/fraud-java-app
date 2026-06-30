@@ -56,13 +56,11 @@ public class GetFraudResponseForCardHandler
     @Override
     @Transactional
     public ApiResult<FraudResponseDto> handle(GetFraudResponseForCardCommand cmd) {
-        // 1) Yeni işlem kimliği + kayıt
+        // 1) Yeni işlem kimliği + ATOMİK duplicate claim (race-free — bkz. TransactionStore.claimMessage)
         UUID transactionId = UUID.randomUUID();
 
-        ControlCode controlCode = transactionStore
-                .existsByMessageIdAndModule(cmd.transactionMessageId(), cmd.module())
-                ? ControlCode.DUPLICATE
-                : ControlCode.NORMAL;
+        boolean firstClaim = transactionStore.claimMessage(cmd.transactionMessageId(), cmd.module());
+        ControlCode controlCode = firstClaim ? ControlCode.NORMAL : ControlCode.DUPLICATE;
 
         Transaction tx = new Transaction(
                 transactionId, cmd.transactionMessageId(), cmd.module(),

@@ -17,8 +17,6 @@ import java.util.UUID;
  */
 public interface TransactionJpaRepository extends JpaRepository<Transaction, UUID> {
 
-    boolean existsByMessageIdAndModule(long messageId, int module);
-
     @Modifying
     @Query("update Transaction t set t.latestRequest = false " +
            "where t.messageId = :messageId and t.module = :module and t.id <> :currentId")

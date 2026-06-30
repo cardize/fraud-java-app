@@ -99,3 +99,19 @@ databaseChangeLog:
             columns:
               - column: { name: status }
               - column: { name: processed_at }
+
+  - changeSet:
+      id: 6-message-claims
+      author: payguard
+      changes:
+        # Atomik mesaj-claim tablosu (race-free duplicate tespiti); Flyway V3 ile eşler.
+        - createTable:
+            tableName: message_claims
+            columns:
+              - column: { name: id, type: BIGINT, autoIncrement: true, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: message_id, type: BIGINT, constraints: { nullable: false } }
+              - column: { name: module, type: INT, constraints: { nullable: false } }
+        - addUniqueConstraint:
+            constraintName: uq_message_claim
+            tableName: message_claims
+            columnNames: message_id, module

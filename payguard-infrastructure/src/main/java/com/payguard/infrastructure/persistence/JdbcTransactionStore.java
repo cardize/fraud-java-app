@@ -3,8 +3,11 @@ package com.payguard.infrastructure.persistence;
 import com.payguard.application.transactions.TransactionStore;
 import com.payguard.domain.transaction.Transaction;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
 import java.util.UUID;
@@ -31,12 +34,16 @@ public class JdbcTransactionStore implements TransactionStore {
         this.jdbc = jdbc;
     }
 
+    /** REQUIRES_NEW gerekçesi için bkz. {@link JpaTransactionStore#claimMessage}. */
     @Override
-    public boolean existsByMessageIdAndModule(long messageId, int module) {
-        Integer count = jdbc.queryForObject(
-                "SELECT COUNT(*) FROM transactions WHERE message_id = ? AND module = ?",
-                Integer.class, messageId, module);
-        return count != null && count > 0;
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public boolean claimMessage(long messageId, int module) {
+        try {
+            jdbc.update("INSERT INTO message_claims (message_id, module) VALUES (?, ?)", messageId, module);
+            return true;
+        } catch (DataIntegrityViolationException e) {
+            return false;
+        }
     }
 
     @Override
