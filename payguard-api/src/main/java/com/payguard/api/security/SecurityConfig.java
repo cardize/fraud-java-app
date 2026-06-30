@@ -1,5 +1,6 @@
 package com.payguard.api.security;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -10,6 +11,8 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
+
+import java.time.Duration;
 
 /**
  * Güvenlik yapılandırması — stateless JWT.
@@ -36,7 +39,10 @@ public class SecurityConfig {
 
     /** Ana uygulama zinciri — JWT + güvenli başlıklar. */
     @Bean
-    public SecurityFilterChain apiChain(HttpSecurity http, JwtAuthenticationFilter jwtFilter) throws Exception {
+    public SecurityFilterChain apiChain(HttpSecurity http, JwtAuthenticationFilter jwtFilter,
+                                        @Value("${payguard.security.login-rate-limit.capacity:5}") int rateCapacity,
+                                        @Value("${payguard.security.login-rate-limit.window-seconds:60}") int rateWindowSeconds)
+            throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)                       // stateless API
                 .headers(h -> h
@@ -51,7 +57,8 @@ public class SecurityConfig {
                         .anyRequest().authenticated())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 // Rate limiter en önce çalışır (JWT doğrulamasından bile önce) ki sınır aşımı ucuz reddedilsin.
-                .addFilterBefore(new LoginRateLimitFilter(), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new LoginRateLimitFilter(rateCapacity, Duration.ofSeconds(rateWindowSeconds)),
+                        UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }

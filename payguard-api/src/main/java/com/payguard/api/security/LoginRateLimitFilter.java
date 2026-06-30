@@ -27,13 +27,18 @@ import java.time.Duration;
 public class LoginRateLimitFilter extends OncePerRequestFilter {
 
     private static final String LOGIN_PATH = "/api/v1/auth/login";
-    private static final int CAPACITY = 5;
-    private static final Duration WINDOW = Duration.ofMinutes(1);
 
+    private final int capacity;
+    private final Duration window;
     private final Cache<String, Bucket> buckets = Caffeine.newBuilder()
             .maximumSize(50_000)
             .expireAfterAccess(Duration.ofMinutes(10))
             .build();
+
+    public LoginRateLimitFilter(int capacity, Duration window) {
+        this.capacity = capacity;
+        this.window = window;
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
@@ -55,7 +60,7 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
     }
 
     private Bucket newBucket() {
-        Bandwidth limit = Bandwidth.classic(CAPACITY, Refill.intervally(CAPACITY, WINDOW));
+        Bandwidth limit = Bandwidth.classic(capacity, Refill.intervally(capacity, window));
         return Bucket.builder().addLimit(limit).build();
     }
 

@@ -1,5 +1,6 @@
 package com.payguard.api.security;
 
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,14 +15,17 @@ import java.io.IOException;
 
 /**
  * Her istekte Bearer token'ı doğrulayıp SecurityContext'e kimlik koyan filtre.
+ * İmzası geçerli olsa bile kara listede (logout edilmiş) bir token reddedilir.
  */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
+    private final TokenBlacklist blacklist;
 
-    public JwtAuthenticationFilter(JwtService jwtService) {
+    public JwtAuthenticationFilter(JwtService jwtService, TokenBlacklist blacklist) {
         this.jwtService = jwtService;
+        this.blacklist = blacklist;
     }
 
     @Override
@@ -29,11 +33,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain chain) throws ServletException, IOException {
         String header = request.getHeader("Authorization");
         if (header != null && header.startsWith("Bearer ")) {
-            String token = header.substring(7);
-            String user = jwtService.validateAndGetUser(token);
-            if (user != null) {
+            Claims claims = jwtService.validate(header.substring(7));
+            if (claims != null && !blacklist.isRevoked(claims.getId())) {
                 var auth = new UsernamePasswordAuthenticationToken(
-                        user, null, AuthorityUtils.createAuthorityList("ROLE_USER"));
+                        claims.getSubject(), null, AuthorityUtils.createAuthorityList("ROLE_USER"));
                 SecurityContextHolder.getContext().setAuthentication(auth);
             }
         }

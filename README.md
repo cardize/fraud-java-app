@@ -101,6 +101,9 @@ curl -X POST http://localhost:8080/api/v1/ai/check-transaction \
 
 # Senaryo cache temizleme
 curl -X POST http://localhost:8080/api/v1/cache/evict-scenarios -H "Authorization: Bearer $TOKEN"
+
+# Çıkış (token'ı kara listeye alır; bundan sonra bu token reddedilir)
+curl -X POST http://localhost:8080/api/v1/auth/logout -H "Authorization: Bearer $TOKEN"
 ```
 
 - **Swagger UI:** http://localhost:8080/swagger-ui.html
@@ -124,6 +127,7 @@ mvn -Dtest=ContainersFraudFlowTest test    # Postgres+Kafka (Docker gerekir)
 | `spring.cache.type` | `caffeine` (vars.) / `redis` | Cache sağlayıcı (boyut+TTL sınırlı) |
 | `payguard.scenario.parallel` / `max-parallelism` | bool / int | Senaryo paralel yürütme |
 | `payguard.security.jwt-secret` / `demo-password` | string | JWT anahtarı / login demo şifresi |
+| `payguard.security.login-rate-limit.capacity` / `window-seconds` | int (vars. 5/60) | Login brute-force sınırı (IP başına) |
 | profil `multitenant` | aktif/değil | Tenant başına ayrı DB + per-tenant Flyway (`X-Tenant` header) |
 | profil `liquibase` | aktif/değil | Migration aracı: Flyway (vars.) yerine Liquibase |
 | profil `redis` | aktif/değil | Cache sağlayıcıyı Redis'e geçirir |

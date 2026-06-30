@@ -87,3 +87,15 @@ databaseChangeLog:
             columns:
               - column: { name: status }
               - column: { name: created_at }
+
+  - changeSet:
+      id: 5-outbox-processed-index
+      author: payguard
+      changes:
+        # Temizlik sorgusu (status + processed_at filtreler) için; Flyway V2 ile eşler.
+        - createIndex:
+            indexName: idx_outbox_status_processed
+            tableName: outbox_messages
+            columns:
+              - column: { name: status }
+              - column: { name: processed_at }

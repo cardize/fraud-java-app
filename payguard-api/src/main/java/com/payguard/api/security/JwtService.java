@@ -10,11 +10,14 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
+import java.util.UUID;
 
 /**
  * JWT üretir ve doğrular (HMAC-SHA256, simetrik gizli anahtar).
  *
  * Simetrik anahtar IdP gerektirmez; üretimde IdP/JWKS'e geçilir.
+ * Her token benzersiz bir jti (JWT ID) taşır — logout sırasında tüm token'ı saklamadan
+ * yalnızca jti'yi kara listeye almak için kullanılır (bkz. {@link TokenBlacklist}).
  */
 @Service
 public class JwtService {
@@ -31,6 +34,7 @@ public class JwtService {
     public String issue(String username) {
         Instant now = Instant.now();
         return Jwts.builder()
+                .id(UUID.randomUUID().toString())
                 .subject(username)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plusMillis(expirationMs)))
@@ -38,15 +42,14 @@ public class JwtService {
                 .compact();
     }
 
-    /** Token geçerliyse kullanıcı adını (subject) döner; geçersizse null. */
-    public String validateAndGetUser(String token) {
+    /** Token geçerliyse (imza + süre) claim'lerini döner; geçersizse null. */
+    public Claims validate(String token) {
         try {
-            Claims claims = Jwts.parser()
+            return Jwts.parser()
                     .verifyWith(key)
                     .build()
                     .parseSignedClaims(token)
                     .getPayload();
-            return claims.getSubject();
         } catch (Exception e) {
             return null;
         }

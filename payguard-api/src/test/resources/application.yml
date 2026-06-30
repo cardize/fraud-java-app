@@ -1,0 +1,11 @@
+# Test profili override'ları.
+#
+# Login rate limiter IP başına çalışır; MockMvc testlerinin tamamı aynı (mock) istemci IP'sini
+# paylaşır. Üretim limiti (5/dakika) ile entegrasyon test paketi çok sayıda login() çağrısı
+# yaptığında flaky 429 hatası alınırdı. Burada limit testler için pratik şekilde gevşetilir;
+# üretim davranışı (application.yml'deki varsayılan) etkilenmez.
+payguard:
+  security:
+    login-rate-limit:
+      capacity: 1000
+      window-seconds: 60

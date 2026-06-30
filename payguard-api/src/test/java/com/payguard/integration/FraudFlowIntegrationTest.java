@@ -92,6 +92,36 @@ class FraudFlowIntegrationTest {
                 .andExpect(jsonPath("$.success").value(false));
     }
 
+    @Test
+    void logout_sonrasi_token_reddedilir() throws Exception {
+        String token = login();
+
+        // logout öncesi token geçerli
+        mockMvc.perform(post("/api/v1/ai/check-transaction")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(checkTransactionRequest()))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/v1/auth/logout")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+
+        // aynı token artık (kara listede) reddedilir
+        mockMvc.perform(post("/api/v1/ai/check-transaction")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(checkTransactionRequest()))
+                .andExpect(status().is4xxClientError());
+    }
+
+    private String checkTransactionRequest() {
+        return "{\"transactionId\":\"33333333-3333-3333-3333-333333333333\","
+                + "\"shadowCardNo\":\"LOGOUTCARD\",\"amount\":100,\"merchantId\":\"M1\","
+                + "\"transactionDate\":\"2026-01-01T03:00:00Z\"}";
+    }
+
     private String cardRequest(int amount) {
         return "{\"module\":1,\"transactionMessageId\":1001,\"shadowCardNo\":\"CARD123\",\"amount\":" + amount
                 + ",\"merchantId\":\"MERCH1\",\"transactionDate\":\"2026-01-01T03:00:00Z\"}";
