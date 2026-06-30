@@ -66,8 +66,4 @@ public class Transaction {
     public void setFraudResponseCode(String fraudResponseCode) {
         this.fraudResponseCode = fraudResponseCode;
     }
-
-    public void markNotLatest() {
-        this.latestRequest = false;
-    }
 }

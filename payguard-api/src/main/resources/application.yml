@@ -4,6 +4,11 @@ spring:
   application:
     name: payguard
 
+  # Java 21 sanal thread'leri — bloklayan istek/IO işlerinde yüksek eşzamanlılık (düşük bellek).
+  threads:
+    virtual:
+      enabled: true
+
   # H2 in-memory veritabanı (geliştirme/çalıştırma için).
   # Üretimde PostgreSQL'e geçilir: org.postgresql:postgresql + url jdbc:postgresql://...
   datasource:
@@ -54,10 +59,11 @@ payguard:
     # Anomali tespiti açık/kapalı
     enabled: true
   security:
-    # HMAC-SHA256 için en az 256-bit (32+ karakter) gizli anahtar. Üretimde ENV'den verilir!
-    jwt-secret: "payguard-dev-secret-key-change-me-please-32+chars"
-    jwt-expiration-ms: 3600000     # 1 saat
-    demo-password: "payguard123"
+    # HMAC-SHA256 için en az 256-bit (32+ karakter) gizli anahtar.
+    # Üretimde PAYGUARD_JWT_SECRET ortam değişkeniyle override edilir; gömülü değer yalnızca dev içindir.
+    jwt-secret: "${PAYGUARD_JWT_SECRET:payguard-dev-secret-key-change-me-please-32+chars}"
+    jwt-expiration-ms: "${PAYGUARD_JWT_EXPIRATION_MS:3600000}"   # 1 saat
+    demo-password: "${PAYGUARD_DEMO_PASSWORD:payguard123}"
   outbox:
     poll-interval-ms: 5000
     destination: "payguard.offline-operations"

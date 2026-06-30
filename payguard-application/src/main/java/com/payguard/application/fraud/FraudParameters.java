@@ -37,6 +37,8 @@ public class FraudParameters {
     public UUID getTransactionId() { return transactionId; }
     public String getShadowCardNo() { return shadowCardNo; }
     public BigDecimal getAmount() { return amount; }
+    /** Kural ifadelerinin metot çağrısı yapmadan (güvenli SpEL) kullanabilmesi için. */
+    public double getAmountValue() { return amount.doubleValue(); }
     public String getMerchantId() { return merchantId; }
     public Instant getTransactionDate() { return transactionDate; }
     public int getHourOfDay() { return hourOfDay; }

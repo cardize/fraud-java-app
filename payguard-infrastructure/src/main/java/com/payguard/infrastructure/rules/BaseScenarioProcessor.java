@@ -11,7 +11,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 /**
@@ -30,16 +29,16 @@ public abstract class BaseScenarioProcessor implements ScenarioProcessor {
     private final ScenarioCatalog scenarioCatalog;
     private final RuleEvaluator ruleEvaluator;
     private final boolean parallel;
-    private final int maxParallelism;
+    private final ExecutorService executor;
 
     protected BaseScenarioProcessor(ScenarioCatalog scenarioCatalog,
                                     RuleEvaluator ruleEvaluator,
                                     boolean parallel,
-                                    int maxParallelism) {
+                                    ExecutorService executor) {
         this.scenarioCatalog = scenarioCatalog;
         this.ruleEvaluator = ruleEvaluator;
         this.parallel = parallel;
-        this.maxParallelism = maxParallelism;
+        this.executor = executor;
     }
 
     @Override
@@ -57,22 +56,17 @@ public abstract class BaseScenarioProcessor implements ScenarioProcessor {
     }
 
     private List<Scenario> evaluateParallel(List<Scenario> scenarios, FraudParameters params) {
-        // Paralellik derecesi sınırlı bir thread havuzuyla denetlenir.
-        ExecutorService pool = Executors.newFixedThreadPool(Math.max(1, maxParallelism));
-        try {
-            List<Future<Optional<Scenario>>> futures = scenarios.stream()
-                    .map(scenario -> pool.submit(
-                            () -> isHit(scenario, params) ? Optional.of(scenario) : Optional.<Scenario>empty()))
-                    .toList();
+        // Paylaşımlı, sınırlı havuza iş gönderilir (her istekte yeni havuz açılmaz).
+        List<Future<Optional<Scenario>>> futures = scenarios.stream()
+                .map(scenario -> executor.submit(
+                        () -> isHit(scenario, params) ? Optional.of(scenario) : Optional.<Scenario>empty()))
+                .toList();
 
-            return futures.stream()
-                    .map(this::get)
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
-                    .toList();
-        } finally {
-            pool.shutdown();
-        }
+        return futures.stream()
+                .map(this::get)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .toList();
     }
 
     private Optional<Scenario> get(Future<Optional<Scenario>> f) {

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -44,12 +45,22 @@ public class OutboxRelay {
         if (batch.isEmpty()) {
             return;
         }
+        // Mesaj bazlı izolasyon: biri başarısız olursa diğerleri yine işlenir; başarısız olan
+        // PENDING kalıp sonraki turda yeniden denenir (zehirli mesaj kuyruğu tıkamaz).
+        List<OutboxMessage> processed = new ArrayList<>();
         for (OutboxMessage msg : batch) {
-            publish(msg);
-            msg.markProcessed(Instant.now());
+            try {
+                publish(msg);
+                msg.markProcessed(Instant.now());
+                processed.add(msg);
+            } catch (Exception e) {
+                log.error("Outbox mesajı yayımlanamadı (id={}), sonraki turda yeniden denenecek", msg.getId(), e);
+            }
         }
-        repository.saveAll(batch);
-        log.info("Outbox: {} mesaj işlendi", batch.size());
+        if (!processed.isEmpty()) {
+            repository.saveAll(processed);
+            log.info("Outbox: {}/{} mesaj işlendi", processed.size(), batch.size());
+        }
     }
 
     private void publish(OutboxMessage msg) {

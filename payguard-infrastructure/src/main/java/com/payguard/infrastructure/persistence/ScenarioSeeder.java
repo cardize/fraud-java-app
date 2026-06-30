@@ -35,18 +35,18 @@ public class ScenarioSeeder implements ApplicationRunner {
         // CARD senaryoları
         ScenarioRow highAmount = new ScenarioRow(
                 "Yüksek Tutar", ProductType.CARD, 1, 1, "REJECT",
-                List.of(new RuleRow("Tutar eşiği aşıyor", RuleType.SIMPLE, "amount.doubleValue() > threshold")));
+                List.of(new RuleRow("Tutar eşiği aşıyor", RuleType.SIMPLE, "amountValue > threshold")));
 
         ScenarioRow nightLargeSpend = new ScenarioRow(
                 "Gece Yüksek Harcama", ProductType.CARD, 1, 2, "REVIEW",
                 List.of(
                         new RuleRow("Gece saati", RuleType.SIMPLE, "hourOfDay >= 0 and hourOfDay < 6"),
-                        new RuleRow("Tutar > 1000", RuleType.SIMPLE, "amount.doubleValue() > 1000")));
+                        new RuleRow("Tutar > 1000", RuleType.SIMPLE, "amountValue > 1000")));
 
         // PF için örnek bir senaryo (yeni ürün tipinin de DB'den çalıştığını göstermek için)
         ScenarioRow pfHighAmount = new ScenarioRow(
                 "PF Yüksek Tutar", ProductType.PF, 1, 1, "REJECT",
-                List.of(new RuleRow("PF tutar > 10000", RuleType.SIMPLE, "amount.doubleValue() > 10000")));
+                List.of(new RuleRow("PF tutar > 10000", RuleType.SIMPLE, "amountValue > 10000")));
 
         repository.saveAll(List.of(highAmount, nightLargeSpend, pfHighAmount));
         log.info("Örnek senaryolar yüklendi: {} adet", repository.count());

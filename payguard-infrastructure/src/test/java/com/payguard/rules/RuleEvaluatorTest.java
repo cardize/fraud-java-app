@@ -30,7 +30,7 @@ class RuleEvaluatorTest {
 
     @Test
     void highAmountRuleHits() {
-        Rule rule = new Rule(1, "yüksek tutar", RuleType.SIMPLE, "amount.doubleValue() > threshold");
+        Rule rule = new Rule(1, "yüksek tutar", RuleType.SIMPLE, "amountValue > threshold");
         assertTrue(evaluator.evaluate(rule, params(6000, 14)));
         assertFalse(evaluator.evaluate(rule, params(100, 14)));
     }
