@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 import java.util.concurrent.ExecutorService;
 
 /**
- * TrKart senaryo işlemcisi.
+ * TrKart scenario processor.
  */
 @Component
 public class TrKartScenarioProcessor extends BaseScenarioProcessor {

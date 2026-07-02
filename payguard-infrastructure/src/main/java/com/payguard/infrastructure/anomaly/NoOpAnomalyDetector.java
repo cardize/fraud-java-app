@@ -7,10 +7,10 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 /**
- * AI kapalıyken (payguard.ai.enabled=false) devreye giren no-op detektör.
+ * No-op detector activated when AI is disabled (payguard.ai.enabled=false).
  *
- * Anomali kontrolü atlanır (her işlem temiz sayılır). Böylece handler her zaman bir
- * AnomalyDetector bean'i bulur; akış kırılmaz.
+ * The anomaly check is skipped (every transaction is treated as clean). This guarantees the
+ * handler always finds an AnomalyDetector bean; the flow never breaks.
  */
 @Component
 @ConditionalOnProperty(name = "payguard.ai.enabled", havingValue = "false")
@@ -18,6 +18,6 @@ public class NoOpAnomalyDetector implements AnomalyDetector {
 
     @Override
     public AnomalyResult check(FraudTransaction transaction) {
-        return new AnomalyResult(false, 0.0, "AI devre dışı");
+        return new AnomalyResult(false, 0.0, "AI disabled");
     }
 }

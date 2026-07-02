@@ -5,10 +5,10 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 /**
- * RabbitMQ yayımcısı. payguard.outbox.publisher=rabbit ile aktif.
+ * RabbitMQ publisher. Active when payguard.outbox.publisher=rabbit.
  *
- * RabbitTemplate Spring Boot tarafından otomatik konfigüre edilir (spring.rabbitmq.*).
- * destination, exchange/routing-key olarak kullanılır.
+ * RabbitTemplate is auto-configured by Spring Boot (spring.rabbitmq.*).
+ * destination is used as the exchange/routing-key.
  */
 @Component
 @ConditionalOnProperty(name = "payguard.outbox.publisher", havingValue = "rabbit")

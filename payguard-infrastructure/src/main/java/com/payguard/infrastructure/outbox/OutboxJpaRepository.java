@@ -13,22 +13,24 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * Outbox mesajları için Spring Data JPA repository'si.
+ * Spring Data JPA repository for outbox messages.
  */
 public interface OutboxJpaRepository extends JpaRepository<OutboxMessage, Long> {
 
     /**
-     * Yayımlanmayı bekleyen mesajları (en eski önce) sınırlı sayıda, KİLİTLEYEREK getirir.
-     * PESSIMISTIC_WRITE + SKIP LOCKED (timeout -2): çoklu-instance'ta iki relay aynı satırı almaz,
-     * kilitli satırlar atlanır → çift işleme önlenir. (Postgres'te FOR UPDATE SKIP LOCKED'a çevrilir.)
+     * Fetches a bounded number of pending messages (oldest first), LOCKING them.
+     * PESSIMISTIC_WRITE + SKIP LOCKED (timeout -2): in a multi-instance deployment, two relays
+     * never grab the same row — locked rows are skipped, preventing double-processing.
+     * (Translates to FOR UPDATE SKIP LOCKED on Postgres.)
      */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @QueryHints(@QueryHint(name = "jakarta.persistence.lock.timeout", value = "-2"))
     List<OutboxMessage> findByStatusOrderByCreatedAtAsc(OutboxStatus status, Limit limit);
 
     /**
-     * Belirtilen tarihten eski, işlenmiş (PROCESSED) kayıtları siler.
-     * Bu olmadan outbox tablosu sınırsız büyür ve sorgu/index performansı zamanla bozulur.
+     * Deletes PROCESSED records older than the given cutoff.
+     * Without this, the outbox table would grow unbounded and query/index performance would
+     * degrade over time.
      */
     @Modifying
     @Query("delete from OutboxMessage m where m.status = com.payguard.infrastructure.outbox.OutboxStatus.PROCESSED " +

@@ -13,11 +13,12 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * Transactional Outbox tablosu satırı.
+ * Transactional Outbox table row.
  *
- * İş kaydı (transaction) ile AYNI veritabanı transaction'ında yazılır → ya ikisi de yazılır
- * ya hiçbiri (atomik). Böylece "mesajı kuyruğa attım ama DB commit olmadı" / "DB commit oldu ama
- * mesaj kayboldu" tutarsızlıkları imkânsızlaşır. Bir relay sonradan PENDING kayıtları yayımlar.
+ * Written in the SAME database transaction as the business record (transaction) -> either both
+ * are written or neither is (atomic). This makes "queued the message but the DB didn't commit" /
+ * "the DB committed but the message was lost" inconsistencies impossible. A relay publishes
+ * PENDING records afterward.
  */
 @Entity
 @Table(name = "outbox_messages")
@@ -27,7 +28,7 @@ public class OutboxMessage {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String type;               // mesaj tipi, örn "PROCESS_OFFLINE_SCENARIOS"
+    private String type;               // message type, e.g. "PROCESS_OFFLINE_SCENARIOS"
     private UUID transactionId;
     private int module;
     private String fraudResponseCode;

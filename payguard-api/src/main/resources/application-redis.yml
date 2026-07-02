@@ -1,4 +1,4 @@
-# 'redis' profili — Redis çalışıyorken aktive et:
+# 'redis' profile — activate while Redis is running:
 #   mvn -pl payguard-api -am spring-boot:run -Dspring-boot.run.profiles=redis
 
 spring:
@@ -9,4 +9,4 @@ spring:
       host: localhost
       port: 6379
   cache.redis:
-    time-to-live: 120000     # 2 dk
+    time-to-live: 120000     # 2 min

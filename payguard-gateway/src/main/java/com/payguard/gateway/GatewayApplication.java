@@ -4,10 +4,10 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
- * API Gateway giriş noktası.
+ * API Gateway entry point.
  *
- * İstekleri arka taraftaki API'ye (payguard-api) yönlendiren ince bir reverse proxy.
- * Route'lar application.yml'de tanımlı.
+ * A thin reverse proxy that routes requests to the backing API (payguard-api).
+ * Routes are defined in application.yml.
  */
 @SpringBootApplication
 public class GatewayApplication {

@@ -1,7 +1,7 @@
 package com.payguard.application.common;
 
 /**
- * Standart API sonuç zarfı (başarı/veri/mesaj).
+ * Standard API result envelope (success/data/message).
  */
 public record ApiResult<T>(boolean success, T data, String message) {
 

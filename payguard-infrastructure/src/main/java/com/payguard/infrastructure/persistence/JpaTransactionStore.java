@@ -11,12 +11,12 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
 /**
- * TransactionStore portunun JPA ADAPTER'ı (hexagonal architecture).
+ * JPA ADAPTER for the TransactionStore port (hexagonal architecture).
  *
- * Application'daki TransactionStore arayüzünü, INFRASTRUCTURE'daki JPA repository'ye
- * delege ederek gerçekler. Application bu sınıfı görmez; sadece portu (interface) bilir.
+ * Fulfills application's TransactionStore interface by delegating to the JPA repository in
+ * INFRASTRUCTURE. Application never sees this class; it only knows the port (interface).
  *
- * VARSAYILAN adapter: payguard.persistence.transaction-store=jpa (veya ayar yoksa).
+ * DEFAULT adapter: payguard.persistence.transaction-store=jpa (or unset).
  */
 @Component
 @ConditionalOnProperty(name = "payguard.persistence.transaction-store", havingValue = "jpa", matchIfMissing = true)
@@ -31,11 +31,11 @@ public class JpaTransactionStore implements TransactionStore {
     }
 
     /**
-     * REQUIRES_NEW: claim denemesi çağıranın (handler'ın) transaction'ından İZOLE, kendi
-     * transaction'ında çalışır. Aksi halde bir unique-constraint ihlali sonrası Hibernate
-     * çağıranın transaction'ını "rollback-only" işaretleyebilir ve handler'ın hemen ardından
-     * yapacağı normal save() çağrısı da bozulurdu. Başarısız claim yalnızca bu küçük, ayrı
-     * transaction'ı geri alır; handler'ın asıl transaction'ı sağlıklı kalır.
+     * REQUIRES_NEW: the claim attempt runs ISOLATED from the caller's (the handler's) transaction,
+     * in its own transaction. Otherwise, a unique-constraint violation could make Hibernate mark
+     * the caller's transaction "rollback-only", breaking the normal save() call the handler makes
+     * right afterward. A failed claim only rolls back this small, separate transaction; the
+     * handler's actual transaction stays healthy.
      */
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)

@@ -9,11 +9,11 @@ import org.springframework.data.repository.query.Param;
 import java.util.UUID;
 
 /**
- * Spring Data JPA repository (altyapı detayı).
+ * Spring Data JPA repository (infrastructure detail).
  *
- * Spring, bu arayüzün implementasyonunu OTOMATİK üretir. Bu tip Spring Data'ya
- * bağımlı olduğu için APPLICATION'da değil, INFRASTRUCTURE'da durur; dışarıya
- * TransactionStore portu üzerinden açılır (bkz. JpaTransactionStore).
+ * Spring generates this interface's implementation AUTOMATICALLY. Because this type depends on
+ * Spring Data, it lives in INFRASTRUCTURE, not APPLICATION; it is exposed outward through the
+ * TransactionStore port (see JpaTransactionStore).
  */
 public interface TransactionJpaRepository extends JpaRepository<Transaction, UUID> {
 

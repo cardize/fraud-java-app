@@ -12,16 +12,16 @@
 
     <artifactId>payguard-api</artifactId>
     <name>PayGuard API</name>
-    <description>Çalıştırılabilir uygulama: Controller + bootstrap</description>
+    <description>Runnable application: controllers + bootstrap</description>
 
     <dependencies>
-        <!-- en dış katman: infrastructure'a bağımlı, gerisini transitif alır -->
+        <!-- outermost layer: depends on infrastructure, gets the rest transitively -->
         <dependency>
             <groupId>com.payguard</groupId>
             <artifactId>payguard-infrastructure</artifactId>
         </dependency>
 
-        <!-- Web (Controller) -->
+        <!-- Web (controllers) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
@@ -31,18 +31,18 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
-        <!-- Güvenlik (JWT) -->
+        <!-- Security (JWT) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
-        <!-- Token-bucket rate limiting (login brute-force koruması) -->
+        <!-- Token-bucket rate limiting (login brute-force protection) -->
         <dependency>
             <groupId>com.bucket4j</groupId>
             <artifactId>bucket4j_jdk17-core</artifactId>
             <version>8.10.1</version>
         </dependency>
-        <!-- JWT üret/doğrula (jjwt) -->
+        <!-- JWT issue/verify (jjwt) -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
@@ -60,12 +60,12 @@
             <version>0.12.6</version>
             <scope>runtime</scope>
         </dependency>
-        <!-- Actuator: sağlık/metrik uçları -->
+        <!-- Actuator: health/metrics endpoints -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
-        <!-- Prometheus metrik export (/actuator/prometheus) -->
+        <!-- Prometheus metrics export (/actuator/prometheus) -->
         <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-registry-prometheus</artifactId>
@@ -77,7 +77,7 @@
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
             <version>2.6.0</version>
         </dependency>
-        <!-- H2 in-memory DB (üretimde postgresql vb. ile değişir) -->
+        <!-- H2 in-memory DB (swapped for postgresql etc. in production) -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
@@ -90,8 +90,8 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Testcontainers: gerçek Postgres + Kafka'yı Docker'da ayağa kaldırıp test eder.
-             (H2/mock yerine üretim-benzeri altyapıyla entegrasyon testi.) -->
+        <!-- Testcontainers: spins up real Postgres + Kafka in Docker for tests.
+             (Integration testing against production-like infrastructure instead of H2/mocks.) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-testcontainers</artifactId>
@@ -112,7 +112,7 @@
             <artifactId>kafka</artifactId>
             <scope>test</scope>
         </dependency>
-        <!-- Postgres JDBC sürücüsü ve Flyway Postgres modülü (Flyway 10'da DB başına ayrı modül) -->
+        <!-- Postgres JDBC driver and the Flyway Postgres module (Flyway 10 splits DBs into modules) -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
@@ -123,7 +123,7 @@
             <artifactId>flyway-database-postgresql</artifactId>
             <scope>test</scope>
         </dependency>
-        <!-- Asenkron koşulları beklemek için (outbox relay'in işlemesini beklemek) -->
+        <!-- For awaiting asynchronous conditions (waiting for the outbox relay to process) -->
         <dependency>
             <groupId>org.awaitility</groupId>
             <artifactId>awaitility</artifactId>
@@ -133,7 +133,7 @@
 
     <build>
         <plugins>
-            <!-- Çalıştırılabilir fat-jar üreten plugin SADECE burada (boot edilebilir tek modül) -->
+            <!-- The executable fat-jar plugin lives ONLY here (the single bootable module) -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>

@@ -2,6 +2,7 @@ package com.payguard.api;
 
 import com.payguard.application.anomaly.AnomalyResult;
 import com.payguard.application.anomaly.CheckTransactionCommand;
+import com.payguard.application.common.ApiResult;
 import com.payguard.application.cqrs.Mediator;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -10,8 +11,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * AI / anomali tespiti uç noktaları.
- * Controller ince: komutu Mediator'a verir (CQRS).
+ * AI / anomaly detection endpoints.
+ * The controller stays thin: it hands the command to the Mediator (CQRS).
  */
 @RestController
 @RequestMapping("/api/v1/ai")

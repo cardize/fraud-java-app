@@ -6,8 +6,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 /**
- * Varsayılan yayımcı: broker gerektirmez, sadece loglar (offline/öğrenme için).
- * payguard.outbox.publisher=logging (veya ayar yoksa) aktif.
+ * Default publisher: requires no broker, just logs (for offline/learning use).
+ * Active when payguard.outbox.publisher=logging (or unset).
  */
 @Component
 @ConditionalOnProperty(name = "payguard.outbox.publisher", havingValue = "logging", matchIfMissing = true)

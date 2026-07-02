@@ -12,16 +12,16 @@
 
     <artifactId>payguard-infrastructure</artifactId>
     <name>PayGuard Infrastructure</name>
-    <description>JPA adapter'ları, kural değerlendirici, dış sistem entegrasyonları</description>
+    <description>JPA adapters, rule evaluator, external system integrations</description>
 
     <dependencies>
-        <!-- application port'larını implemente eder; domain transitif gelir -->
+        <!-- implements the application ports; domain comes transitively -->
         <dependency>
             <groupId>com.payguard</groupId>
             <artifactId>payguard-application</artifactId>
         </dependency>
 
-        <!-- JPA/Hibernate. spring-context + SpEL'i transitif getirir -->
+        <!-- JPA/Hibernate. Brings in spring-context + SpEL transitively -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
@@ -32,20 +32,20 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-cache</artifactId>
         </dependency>
-        <!-- Caffeine: sınırlı boyut + TTL'li yüksek performanslı yerel cache (varsayılan sağlayıcı) -->
+        <!-- Caffeine: high-performance local cache with bounded size + TTL (default provider) -->
         <dependency>
             <groupId>com.github.ben-manes.caffeine</groupId>
             <artifactId>caffeine</artifactId>
         </dependency>
-        <!-- Redis cache sağlayıcısı.
-             Varsayılan cache.type=simple olduğundan bağlantı denenmez; 'redis' profiliyle aktif olur. -->
+        <!-- Redis cache provider.
+             No connection is attempted while cache.type=simple is the default; activated by the 'redis' profile. -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
 
-        <!-- Mesaj broker'ları (Outbox relay yayım hedefi). Varsayılan publisher=logging olduğundan
-             broker bağlantısı denenmez; payguard.outbox.publisher=kafka|rabbit ile aktif olur. -->
+        <!-- Message brokers (outbox relay publish target). No broker connection is attempted while
+             the default publisher=logging; activated with payguard.outbox.publisher=kafka|rabbit. -->
         <dependency>
             <groupId>org.springframework.kafka</groupId>
             <artifactId>spring-kafka</artifactId>
@@ -55,13 +55,13 @@
             <artifactId>spring-boot-starter-amqp</artifactId>
         </dependency>
 
-        <!-- Flyway: SQL tabanlı şema migration. Varsayılan. -->
+        <!-- Flyway: SQL-based schema migration. Default. -->
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>
         </dependency>
-        <!-- Liquibase: alternatif migration aracı (XML/YAML changelog). 'liquibase' profiliyle aktif olur;
-             varsayılanda spring.liquibase.enabled=false (Flyway kullanılır). -->
+        <!-- Liquibase: alternative migration tool (XML/YAML changelog). Activated by the 'liquibase'
+             profile; spring.liquibase.enabled=false by default (Flyway is used). -->
         <dependency>
             <groupId>org.liquibase</groupId>
             <artifactId>liquibase-core</artifactId>

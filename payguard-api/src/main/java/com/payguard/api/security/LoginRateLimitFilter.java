@@ -15,14 +15,15 @@ import java.io.IOException;
 import java.time.Duration;
 
 /**
- * Login uç noktasına IP başına token-bucket hız sınırlaması (brute-force koruması).
+ * Per-IP token-bucket rate limiting for the login endpoint (brute-force protection).
  *
- * GÜVENLİK: Doğrulama daha önce sınırsız denenebiliyordu (gerçek bir kaba kuvvet açığı).
- * Her istemci IP'si için ayrı bir bucket tutulur: dakikada 5 deneme, üzeri 429 döner.
- * Bucket'lar sınırlı/expire olan bir Caffeine cache'inde tutulur (bellek sızıntısı olmaz).
+ * SECURITY: Authentication used to be attemptable without limit (a real brute-force gap).
+ * A separate bucket is kept per client IP: 5 attempts per minute, 429 beyond that.
+ * Buckets live in a bounded/expiring Caffeine cache (no memory leak).
  *
- * Bilinçli olarak Spring bean'i DEĞİL — SecurityConfig içinde elle zincire eklenir; aksi halde
- * Spring Boot bunu hem security zincirine hem otomatik servlet filter olarak iki kez kaydederdi.
+ * Deliberately NOT a Spring bean — it is added to the chain manually inside SecurityConfig;
+ * otherwise Spring Boot would register it twice, once in the security chain and once as an
+ * auto-registered servlet filter.
  */
 public class LoginRateLimitFilter extends OncePerRequestFilter {
 
@@ -55,7 +56,7 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
             response.setStatus(429);
             response.setContentType("application/json");
             response.getWriter().write(
-                    "{\"success\":false,\"data\":null,\"message\":\"Çok fazla deneme — lütfen sonra tekrar deneyin\"}");
+                    "{\"success\":false,\"data\":null,\"message\":\"Too many attempts — please try again later\"}");
         }
     }
 
@@ -64,7 +65,7 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
         return Bucket.builder().addLimit(limit).build();
     }
 
-    /** Ters proxy/gateway arkasında gerçek istemci IP'sini X-Forwarded-For'dan okur. */
+    /** Reads the real client IP from X-Forwarded-For when behind a reverse proxy/gateway. */
     private String clientIp(HttpServletRequest request) {
         String forwarded = request.getHeader("X-Forwarded-For");
         if (forwarded != null && !forwarded.isBlank()) {

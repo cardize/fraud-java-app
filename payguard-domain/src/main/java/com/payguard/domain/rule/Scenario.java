@@ -4,13 +4,13 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * Bir senaryo: sıralı/öncelikli kurallar kümesi ve tetiklenince dönecek fraud yanıt kodu.
+ * A scenario: an ordered/prioritized set of rules and the fraud response code to return when it fires.
  *
- * @param id              senaryo kimliği
- * @param name            ad
- * @param priority        öncelik (küçük = önce; birden çok hit olursa en yüksek öncelikli kazanır)
- * @param fraudResponseCode  senaryo tetiklenirse dönecek kod (örn "REJECT", "REVIEW")
- * @param rules           senaryodaki kurallar (hepsi true ise senaryo "hit")
+ * @param id              scenario identifier
+ * @param name            name
+ * @param priority        priority (lower = evaluated first; if multiple hit, the highest-priority one wins)
+ * @param fraudResponseCode  code returned when the scenario fires (e.g. "REJECT", "REVIEW")
+ * @param rules           the scenario's rules (the scenario "hits" only if all of them are true)
  */
 public record Scenario(
         long id,

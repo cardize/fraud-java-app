@@ -7,8 +7,8 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * TenantContext'in null-safe davranışını kilitler — ScenarioCatalog'un cache anahtarı ve
- * TenantContextProvider bu davranışa (tenant set edilmemişse "default") güvenir.
+ * Locks in TenantContext's null-safe behavior — ScenarioCatalog's cache key and
+ * TenantContextProvider both rely on this behavior (falling back to "default" when unset).
  */
 class TenantContextTest {
 
@@ -18,18 +18,18 @@ class TenantContextTest {
     }
 
     @Test
-    void tenant_set_edilmemisse_default_doner() {
+    void returnsDefaultWhenTenantNotSet() {
         assertEquals("default", TenantContext.currentOrDefault());
     }
 
     @Test
-    void tenant_set_edilmisse_o_deger_doner() {
+    void returnsTheSetValueWhenTenantIsSet() {
         TenantContext.set("alpha");
         assertEquals("alpha", TenantContext.currentOrDefault());
     }
 
     @Test
-    void clear_sonrasi_tekrar_default_doner() {
+    void returnsDefaultAgainAfterClear() {
         TenantContext.set("beta");
         TenantContext.clear();
         assertEquals("default", TenantContext.currentOrDefault());

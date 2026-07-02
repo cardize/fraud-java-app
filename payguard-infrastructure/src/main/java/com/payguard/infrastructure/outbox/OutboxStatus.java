@@ -1,8 +1,8 @@
 package com.payguard.infrastructure.outbox;
 
 /**
- * Outbox mesaj durumu.
- * PENDING: yazıldı, henüz yayımlanmadı. PROCESSED: relay tarafından yayımlandı.
+ * Outbox message status.
+ * PENDING: written, not yet published. PROCESSED: published by the relay.
  */
 public enum OutboxStatus {
     PENDING,

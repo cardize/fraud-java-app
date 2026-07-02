@@ -6,10 +6,10 @@ import java.time.ZoneOffset;
 import java.util.UUID;
 
 /**
- * Kural motorunun değerlendireceği parametre seti.
+ * Parameter set evaluated by the rule engine.
  *
- * Kurallar (SpEL ifadeleri) bu nesnenin getter'larına erişir.
- * Örn kural ifadesi: "amount > 5000 and hourOfDay < 6"
+ * Rules (SpEL expressions) access this object's getters.
+ * Example rule expression: "amount > 5000 and hourOfDay < 6"
  */
 public class FraudParameters {
 
@@ -19,7 +19,7 @@ public class FraudParameters {
     private final String merchantId;
     private final Instant transactionDate;
 
-    // hesaplanmış (computed) alanlar — kurallarda kullanım kolaylığı için
+    // computed fields — for convenience in rule expressions
     private final int hourOfDay;
     private final double threshold;
 
@@ -37,7 +37,7 @@ public class FraudParameters {
     public UUID getTransactionId() { return transactionId; }
     public String getShadowCardNo() { return shadowCardNo; }
     public BigDecimal getAmount() { return amount; }
-    /** Kural ifadelerinin metot çağrısı yapmadan (güvenli SpEL) kullanabilmesi için. */
+    /** So rule expressions can use it without a method call (safe SpEL). */
     public double getAmountValue() { return amount.doubleValue(); }
     public String getMerchantId() { return merchantId; }
     public Instant getTransactionDate() { return transactionDate; }

@@ -6,10 +6,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 /**
- * Senaryo Spring Data JPA repository'si.
+ * Spring Data JPA repository for scenarios.
  *
- * Metot adından sorgu türetilir: findByProductTypeAndModule -> WHERE product_type=? AND module=?
- * (sonuç ScenarioCatalog'ta cache'lenir).
+ * The query is derived from the method name: findByProductTypeAndModule -> WHERE product_type=? AND module=?
+ * (the result is cached in ScenarioCatalog).
  */
 public interface ScenarioJpaRepository extends JpaRepository<ScenarioRow, Long> {
 

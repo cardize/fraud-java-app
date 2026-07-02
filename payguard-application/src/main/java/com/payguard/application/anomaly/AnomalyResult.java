@@ -1,11 +1,11 @@
 package com.payguard.application.anomaly;
 
 /**
- * Anomali kontrol sonucu.
+ * Anomaly check result.
  *
- * @param anomaly işlem anomali (şüpheli) mi
- * @param score   hibrit anomali skoru (0..1+ arası)
- * @param reason  kararın insan-okur açıklaması
+ * @param anomaly whether the transaction is anomalous (suspicious)
+ * @param score   hybrid anomaly score (0..1+ range)
+ * @param reason  human-readable explanation of the decision
  */
 public record AnomalyResult(
         boolean anomaly,

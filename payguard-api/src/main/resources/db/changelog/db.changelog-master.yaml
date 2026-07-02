@@ -1,5 +1,5 @@
-# Liquibase master changelog — Flyway V1__init.sql ile AYNI şemayı kurar (alternatif araç).
-# 'liquibase' profiliyle aktif: spring.liquibase.enabled=true, spring.flyway.enabled=false.
+# Liquibase master changelog — creates the SAME schema as Flyway V1__init.sql (alternative tool).
+# Active with the 'liquibase' profile: spring.liquibase.enabled=true, spring.flyway.enabled=false.
 
 databaseChangeLog:
   - changeSet:
@@ -92,7 +92,7 @@ databaseChangeLog:
       id: 5-outbox-processed-index
       author: payguard
       changes:
-        # Temizlik sorgusu (status + processed_at filtreler) için; Flyway V2 ile eşler.
+        # For the cleanup query (which filters on status + processed_at); mirrors Flyway V2.
         - createIndex:
             indexName: idx_outbox_status_processed
             tableName: outbox_messages
@@ -104,7 +104,7 @@ databaseChangeLog:
       id: 6-message-claims
       author: payguard
       changes:
-        # Atomik mesaj-claim tablosu (race-free duplicate tespiti); Flyway V3 ile eşler.
+        # Atomic message-claim table (race-free duplicate detection); mirrors Flyway V3.
         - createTable:
             tableName: message_claims
             columns:

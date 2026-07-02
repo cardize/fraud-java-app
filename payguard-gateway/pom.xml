@@ -15,7 +15,7 @@
     <description>API Gateway / reverse proxy</description>
 
     <dependencies>
-        <!-- Spring Cloud Gateway. Reaktif (WebFlux) tabanlı; web starter EKLENMEZ. -->
+        <!-- Spring Cloud Gateway. Reactive (WebFlux) based; do NOT add the web starter. -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-gateway</artifactId>

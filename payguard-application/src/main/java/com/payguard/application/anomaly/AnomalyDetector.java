@@ -1,11 +1,11 @@
 package com.payguard.application.anomaly;
 
 /**
- * Anomali tespiti PORT'u.
+ * Anomaly detection PORT.
  *
- * Application yalnızca bu arayüzü bilir; gerçek implementasyon (istatistiksel skorlama bugün,
- * ileride DJL/ONNX modeli) INFRASTRUCTURE'dadır. Böylece ML kütüphanesini değiştirmek
- * application/domain'i etkilemez.
+ * Application only knows this interface; the real implementation (statistical scoring today,
+ * a DJL/ONNX model tomorrow) lives in INFRASTRUCTURE. Swapping the ML library never affects
+ * application/domain.
  */
 public interface AnomalyDetector {
     AnomalyResult check(FraudTransaction transaction);

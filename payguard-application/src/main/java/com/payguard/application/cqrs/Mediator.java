@@ -7,10 +7,11 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Komutu uygun handler'a yönlendiren basit aracı (dispatcher).
+ * Simple dispatcher that routes a command to the right handler.
  *
- * Controller send(command) çağırır; doğru handler otomatik bulunur. Spring tüm CommandHandler
- * bean'lerini constructor'a enjekte eder; komut tipi -> handler eşlemesi bir map'te tutulur.
+ * The controller calls send(command); the correct handler is found automatically. Spring injects
+ * every CommandHandler bean into the constructor; the command type -> handler mapping is kept in
+ * a map.
  */
 @Component
 public class Mediator {
@@ -29,7 +30,7 @@ public class Mediator {
                 (CommandHandler<Command<R>, R>) handlers.get(command.getClass());
         if (handler == null) {
             throw new IllegalStateException(
-                    "Komut için handler bulunamadı: " + command.getClass().getName());
+                    "No handler found for command: " + command.getClass().getName());
         }
         return handler.handle(command);
     }

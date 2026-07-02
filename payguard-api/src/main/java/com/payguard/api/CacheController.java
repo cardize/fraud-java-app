@@ -1,12 +1,13 @@
 package com.payguard.api;
 
+import com.payguard.application.common.ApiResult;
 import com.payguard.infrastructure.rules.ScenarioCatalog;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Cache yönetimi uç noktaları. Kural/senaryo değiştiğinde cache'i temizlemek için kullanılır.
+ * Cache management endpoints. Used to clear the cache when rules/scenarios change.
  */
 @RestController
 @RequestMapping("/api/v1/cache")
@@ -21,6 +22,6 @@ public class CacheController {
     @PostMapping("/evict-scenarios")
     public ApiResult<String> evictScenarios() {
         scenarioCatalog.evictAll();
-        return ApiResult.ok("Senaryo cache temizlendi");
+        return ApiResult.ok("Scenario cache cleared");
     }
 }

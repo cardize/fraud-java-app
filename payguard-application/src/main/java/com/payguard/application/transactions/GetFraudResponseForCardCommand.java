@@ -12,8 +12,8 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 /**
- * Kart için fraud yanıtı isteyen komut. Hem HTTP istek gövdesi hem CQRS mesajıdır.
- * Dönüş tipi generic ile taşınır: Command<ApiResult<FraudResponseDto>>.
+ * Command requesting a fraud response for a card transaction. It is both the HTTP request body
+ * and the CQRS message. The return type is carried generically: Command<ApiResult<FraudResponseDto>>.
  */
 public record GetFraudResponseForCardCommand(
         @Positive int module,

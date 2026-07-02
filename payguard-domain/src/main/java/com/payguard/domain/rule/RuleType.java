@@ -1,8 +1,8 @@
 package com.payguard.domain.rule;
 
 /**
- * Kural tipi — her tip için ayrı bir değerlendirici (executor) stratejisi olabilir.
- * Şu an SIMPLE kullanılıyor; diğerleri için Strategy deseni hazır.
+ * Rule type — each type may have its own evaluator (executor) strategy.
+ * Only SIMPLE is used today; the Strategy pattern is ready for the others.
  */
 public enum RuleType {
     SIMPLE,

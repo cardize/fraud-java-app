@@ -18,12 +18,12 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
 /**
- * Kart fraud akışının kalbi.
- *   1) İşlemi kaydet (yeni TransactionId üret)
- *   2) Duplicate ise fraud kontrolünü atla
- *   3) FraudParameters oluştur
- *   4) Online senaryoları SENKRON çalıştır -> fraudResponseCode (istemciye döner)
- *   5) Offline işlemleri outbox'a yaz (yanıtı bekletmeden)
+ * The heart of the card fraud flow.
+ *   1) Persist the transaction (generate a new TransactionId)
+ *   2) Skip the fraud check if it's a duplicate
+ *   3) Build FraudParameters
+ *   4) Run the online scenarios SYNCHRONOUSLY -> fraudResponseCode (returned to the client)
+ *   5) Write offline work to the outbox (without blocking the response)
  */
 @Component
 public class GetFraudResponseForCardHandler
@@ -56,7 +56,7 @@ public class GetFraudResponseForCardHandler
     @Override
     @Transactional
     public ApiResult<FraudResponseDto> handle(GetFraudResponseForCardCommand cmd) {
-        // 1) Yeni işlem kimliği + ATOMİK duplicate claim (race-free — bkz. TransactionStore.claimMessage)
+        // 1) New transaction id + ATOMIC duplicate claim (race-free — see TransactionStore.claimMessage)
         UUID transactionId = UUID.randomUUID();
 
         boolean firstClaim = transactionStore.claimMessage(cmd.transactionMessageId(), cmd.module());
@@ -67,30 +67,30 @@ public class GetFraudResponseForCardHandler
                 cmd.shadowCardNo(), cmd.amount(), cmd.merchantId(),
                 cmd.transactionDate(), controlCode);
 
-        // önceki aynı mesajı "latest değil" yap
+        // mark the previous row for the same message as "not latest"
         transactionStore.markPreviousAsNotLatest(cmd.transactionMessageId(), cmd.module(), transactionId);
 
-        // 2) Duplicate ise fraud kontrolü yapılmaz
+        // 2) Skip the fraud check for duplicates
         if (controlCode == ControlCode.DUPLICATE) {
             tx.setFraudResponseCode("DUPLICATE");
             transactionStore.save(tx);
             countDecision("DUPLICATE");
-            return ApiResult.ok(new FraudResponseDto(transactionId, "DUPLICATE"), "Duplicate işlem");
+            return ApiResult.ok(new FraudResponseDto(transactionId, "DUPLICATE"), "Duplicate transaction");
         }
 
-        // 3) Kural motoru parametreleri
+        // 3) Rule engine parameters
         FraudParameters params = new FraudParameters(
                 transactionId, cmd.shadowCardNo(), cmd.amount(),
                 cmd.merchantId(), cmd.transactionDate(), DEFAULT_THRESHOLD);
 
-        // 4) Online senaryolar (senkron) -> istemci yanıtı
+        // 4) Online scenarios (synchronous) -> client response
         String fraudResponseCode = scenarioService.processOnlineScenarios(ProductType.CARD, cmd.module(), params);
         tx.setFraudResponseCode(fraudResponseCode);
         transactionStore.save(tx);
 
-        // 5) Offline işlemler — outbox'a yazılır (bu @Transactional içinde, iş kaydıyla atomik)
-        // BUG DÜZELTMESİ: önceden tenant her zaman sabit "default" yazılıyordu; X-Tenant header'ı
-        // ile gelen gerçek kiracı bilgisi yok sayılıyordu. Artık TenantProvider port'undan okunuyor.
+        // 5) Offline work — written to the outbox (inside this @Transactional, atomic with the business record)
+        // BUGFIX: this used to always write the literal "default" tenant, ignoring the real tenant
+        // carried by the X-Tenant header. It now reads the actual tenant from the TenantProvider port.
         offlinePublisher.publish(new OfflineOperation(
                 transactionId, cmd.module(), fraudResponseCode, tenantProvider.currentTenant()));
 

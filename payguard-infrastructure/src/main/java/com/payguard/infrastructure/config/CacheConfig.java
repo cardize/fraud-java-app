@@ -4,10 +4,10 @@ import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Cache abstraction'ı etkinleştirir (@Cacheable/@CacheEvict çalışsın diye).
+ * Enables the cache abstraction (so @Cacheable/@CacheEvict work).
  *
- * Hangi sağlayıcının kullanılacağı (simple/redis) application.yml + profil ile belirlenir;
- * kod sağlayıcıdan bağımsızdır — sadece anotasyonlarla çalışır.
+ * Which provider (simple/redis) is used is decided by application.yml + profile;
+ * the code is provider-agnostic — it works purely through the annotations.
  */
 @Configuration
 @EnableCaching

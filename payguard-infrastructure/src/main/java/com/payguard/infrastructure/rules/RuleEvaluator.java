@@ -14,14 +14,15 @@ import org.springframework.stereotype.Component;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Tek bir kuralı FraudParameters üzerinde değerlendirir.
+ * Evaluates a single rule against FraudParameters.
  *
- * GÜVENLİK: Kural ifadeleri verisel kaynaklıdır; bu yüzden tam yetkili StandardEvaluationContext yerine
- * yalnızca property okuma + operatörlere izin veren SimpleEvaluationContext kullanılır. Bu, ifade içinden
- * Java tipi/metot/constructor çağrısını (örn. T(Runtime).exec(...)) engeller → SpEL injection kapatılmıştır.
+ * SECURITY: Rule expressions come from data, so instead of the fully-privileged
+ * StandardEvaluationContext, we use SimpleEvaluationContext, which only allows property reads and
+ * operators. This blocks a Java type/method/constructor call from inside an expression (e.g.
+ * T(Runtime).exec(...)) — SpEL injection is closed off.
  *
- * PERFORMANS: İfadeler parse edilip cache'lenir; SpEL derleyici (MIXED) sık çalışan ifadeleri
- * bytecode'a çevirir, derlenemezse güvenle yorumlanmış moda döner.
+ * PERFORMANCE: Expressions are parsed and cached; the SpEL compiler (MIXED) turns frequently-run
+ * expressions into bytecode and safely falls back to interpreted mode if it can't compile one.
  */
 @Component
 public class RuleEvaluator {
@@ -33,7 +34,7 @@ public class RuleEvaluator {
     public boolean evaluate(Rule rule, FraudParameters params) {
         Expression expression = cache.computeIfAbsent(rule.expression(), parser::parseExpression);
 
-        // Salt-okunur bağlam: yalnızca params'ın property'leri (amountValue, threshold, hourOfDay...) okunabilir.
+        // Read-only context: only params' properties (amountValue, threshold, hourOfDay...) can be read.
         EvaluationContext context = SimpleEvaluationContext.forReadOnlyDataBinding()
                 .withRootObject(params)
                 .build();

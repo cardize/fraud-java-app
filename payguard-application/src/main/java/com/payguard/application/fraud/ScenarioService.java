@@ -8,11 +8,11 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Online senaryo yürütmesinin uygulama-katmanı girişi + ürün tipine göre yönlendirme (factory).
+ * Application-layer entry point for running online scenarios + routing by product type (factory).
  *
- * Spring tüm ScenarioProcessor implementasyonlarını (CARD, PF, ...) bir LİSTE olarak enjekte eder;
- * ürün tipi -> processor eşlemesi kurulur. Yeni ürün eklemek = yeni bir ScenarioProcessor bean'i
- * yazmak; burada hiçbir değişiklik gerekmez (Open/Closed).
+ * Spring injects every ScenarioProcessor implementation (CARD, PF, ...) as a LIST; the product
+ * type -> processor mapping is built from that. Adding a new product = writing a new
+ * ScenarioProcessor bean; nothing here needs to change (Open/Closed).
  */
 @Service
 public class ScenarioService {
@@ -28,7 +28,7 @@ public class ScenarioService {
     public String processOnlineScenarios(ProductType productType, int module, FraudParameters params) {
         ScenarioProcessor processor = processors.get(productType);
         if (processor == null) {
-            throw new UnsupportedOperationException("Ürün tipi için işlemci yok: " + productType);
+            throw new UnsupportedOperationException("No processor for product type: " + productType);
         }
         return processor.processOnlineScenarios(module, params);
     }

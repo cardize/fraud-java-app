@@ -1,7 +1,7 @@
 package com.payguard.domain.shared;
 
 /**
- * İşlem kontrol kodu. Duplicate işlemler için fraud kontrolü atlanır.
+ * Transaction control code. Fraud checking is skipped for duplicate transactions.
  */
 public enum ControlCode {
     NORMAL,

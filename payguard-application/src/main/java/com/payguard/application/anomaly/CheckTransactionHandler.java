@@ -5,7 +5,7 @@ import com.payguard.application.cqrs.CommandHandler;
 import org.springframework.stereotype.Component;
 
 /**
- * CheckTransactionCommand handler'ı — anomali kontrolünü port'a delege eder.
+ * Handler for CheckTransactionCommand — delegates the anomaly check to the port.
  */
 @Component
 public class CheckTransactionHandler

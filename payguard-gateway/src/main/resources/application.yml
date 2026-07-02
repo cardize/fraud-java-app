@@ -1,4 +1,4 @@
-# API Gateway konfigürasyonu
+# API Gateway configuration
 
 server:
   port: 8090
@@ -9,19 +9,21 @@ spring:
   cloud:
     gateway:
       routes:
-        # Tüm /api/** isteklerini arka API'ye (8080) ilet
+        # Forward all /api/** requests to the backing API (8080)
         - id: internal-api
           uri: http://localhost:8080
           predicates:
             - Path=/api/**
-        # Actuator health'i de geçir
+        # Actuator (health/metrics/prometheus) now lives on the API's separate management port
+        # (9090) — see payguard-api/application.yml. We kept this route (with an updated target)
+        # so it stays reachable through the gateway from the internal network when needed.
         - id: internal-actuator
-          uri: http://localhost:8080
+          uri: http://localhost:9090
           predicates:
             - Path=/actuator/**
-      # CORS: kaynak listesi açıkça belirtilir. "*" + allowCredentials kombinasyonu tarayıcılarca
-      # zaten reddedilir; ama "*" origin/method/header üçü birden üretimde gereksiz geniş bir
-      # yüzey açar. Gerçek origin'leri PAYGUARD_ALLOWED_ORIGINS ile (virgülle ayrık) verin.
+      # CORS: the origin list is explicit. Browsers already reject "*" + allowCredentials
+      # together; but "*" for origin/method/header all at once opens an unnecessarily wide
+      # surface in production. Provide the real origins via PAYGUARD_ALLOWED_ORIGINS (comma-separated).
       globalcors:
         cors-configurations:
           '[/**]':
@@ -31,7 +33,12 @@ spring:
             allowCredentials: true
             maxAge: 3600
 
+# The gateway's own actuator is also on a separate port — it must not be reachable
+# unauthenticated on the public proxy port (8090); the gateway carries no JWT layer of its own,
+# it is a pure reverse proxy.
 management:
+  server:
+    port: "${PAYGUARD_GATEWAY_MANAGEMENT_PORT:9091}"
   endpoints:
     web:
       exposure:

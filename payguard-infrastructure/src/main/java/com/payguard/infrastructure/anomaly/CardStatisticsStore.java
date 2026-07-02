@@ -7,12 +7,11 @@ import org.springframework.stereotype.Component;
 import java.time.Duration;
 
 /**
- * Kart istatistiklerini tutar (kart no -> istatistik).
+ * Holds card statistics (card number -> statistics).
  *
- * BUG DÜZELTMESİ: Önceki sürüm sınırsız bir ConcurrentHashMap kullanıyordu — her yeni kart
- * numarası kalıcı olarak belleğe ekleniyor, hiç tahliye edilmiyordu (uzun süre çalışan bir
- * prosesin belleği sürekli büyür, klasik bir memory leak). Caffeine ile boyut + erişim-sonrası
- * TTL sınırı konuldu; az kullanılan kartlar otomatik tahliye edilir.
+ * BUGFIX: The previous version used an unbounded ConcurrentHashMap — every new card number was
+ * added to memory permanently and never evicted (a classic memory leak in a long-running process).
+ * Caffeine now enforces a size + access-based TTL limit; rarely used cards are evicted automatically.
  */
 @Component
 public class CardStatisticsStore {

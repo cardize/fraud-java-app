@@ -1,7 +1,7 @@
 package com.payguard.domain.shared;
 
 /**
- * Ürün tipi — hangi senaryo işlemcisinin (processor) seçileceğini belirler.
+ * Product type — determines which scenario processor is selected.
  */
 public enum ProductType {
     CARD,

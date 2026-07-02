@@ -14,9 +14,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Uçtan uca entegrasyon testi: gerçek Spring context + H2 + Flyway + seeder + güvenlik.
+ * End-to-end integration test: real Spring context + H2 + Flyway + seeder + security.
  *
- * Çalışırken: Flyway şemayı kurar, ScenarioSeeder örnek senaryoları yükler, JWT güvenliği aktiftir.
+ * While running: Flyway creates the schema, ScenarioSeeder loads sample scenarios, JWT security is active.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -40,13 +40,13 @@ class FraudFlowIntegrationTest {
     }
 
     @Test
-    void login_gecerli_kimlikle_token_doner() throws Exception {
+    void loginWithValidCredentialsReturnsToken() throws Exception {
         String token = login();
         org.junit.jupiter.api.Assertions.assertFalse(token.isBlank());
     }
 
     @Test
-    void fraud_token_olmadan_401_403_doner() throws Exception {
+    void fraudWithoutTokenReturns4xx() throws Exception {
         mockMvc.perform(post("/api/v1/transactions/get-fraud-response-for-card")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(cardRequest(6000)))
@@ -54,19 +54,19 @@ class FraudFlowIntegrationTest {
     }
 
     @Test
-    void fraud_yuksek_tutar_REJECT_doner() throws Exception {
+    void highAmountFraudReturnsReject() throws Exception {
         String token = login();
         mockMvc.perform(post("/api/v1/transactions/get-fraud-response-for-card")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(cardRequest(6000)))   // > 5000 eşik -> "Yüksek Tutar" senaryosu (REJECT)
+                        .content(cardRequest(6000)))   // > 5000 threshold -> "High Amount" scenario (REJECT)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.fraudResponseCode").value("REJECT"));
     }
 
     @Test
-    void ai_check_transaction_yetersiz_gecmiste_anomaly_doner() throws Exception {
+    void aiCheckTransactionReturnsAnomalyWithInsufficientHistory() throws Exception {
         String token = login();
         mockMvc.perform(post("/api/v1/ai/check-transaction")
                         .header("Authorization", "Bearer " + token)
@@ -79,9 +79,9 @@ class FraudFlowIntegrationTest {
     }
 
     @Test
-    void fraud_gecersiz_govde_400_doner() throws Exception {
+    void fraudWithInvalidBodyReturns400() throws Exception {
         String token = login();
-        // shadowCardNo boş (@NotBlank) + amount negatif (@DecimalMin) -> doğrulama hatası
+        // blank shadowCardNo (@NotBlank) + negative amount (@DecimalMin) -> validation error
         String invalid = "{\"module\":1,\"transactionMessageId\":1001,\"shadowCardNo\":\"\","
                 + "\"amount\":-5,\"merchantId\":\"M1\",\"transactionDate\":\"2026-01-01T03:00:00Z\"}";
         mockMvc.perform(post("/api/v1/transactions/get-fraud-response-for-card")
@@ -93,10 +93,10 @@ class FraudFlowIntegrationTest {
     }
 
     @Test
-    void logout_sonrasi_token_reddedilir() throws Exception {
+    void tokenIsRejectedAfterLogout() throws Exception {
         String token = login();
 
-        // logout öncesi token geçerli
+        // the token is valid before logout
         mockMvc.perform(post("/api/v1/ai/check-transaction")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -108,7 +108,7 @@ class FraudFlowIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
 
-        // aynı token artık (kara listede) reddedilir
+        // the same token is now rejected (blacklisted)
         mockMvc.perform(post("/api/v1/ai/check-transaction")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)

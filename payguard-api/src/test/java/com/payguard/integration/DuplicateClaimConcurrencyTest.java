@@ -20,13 +20,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 /**
- * Aynı transactionMessageId ile gelen eşzamanlı isteklerin TAM OLARAK BİRİNİN normal işlendiğini,
- * geri kalanlarının DUPLICATE döndüğünü kilitler.
+ * Locks in that among concurrent requests carrying the same transactionMessageId EXACTLY ONE is
+ * processed normally and the rest come back as DUPLICATE.
  *
- * Önceki "SELECT ile var mı bak, sonra INSERT et" deseni bunu garanti edemiyordu: yeterince
- * yakın zamanlı eşzamanlı istekler hepsi "yok" görüp hepsi NORMAL işlenebiliyordu (fraud
- * senaryosu N kez koşar, N kez outbox'a yazılırdı). claimMessage()'ın atomik mutex davranışı
- * bunu DB seviyesinde imkânsız kılar.
+ * The previous "SELECT to check, then INSERT" pattern couldn't guarantee this: sufficiently
+ * close concurrent requests could all see "not found" and all be processed as NORMAL (the fraud
+ * scenario would run N times and be written to the outbox N times). claimMessage()'s atomic
+ * mutex behavior makes that impossible at the DB level.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -41,7 +41,7 @@ class DuplicateClaimConcurrencyTest {
     private ObjectMapper objectMapper;
 
     @Test
-    void ayni_messageId_ile_esZamanli_istekler_sadece_bir_kez_normal_islenir() throws Exception {
+    void concurrentRequestsWithSameMessageIdAreProcessedNormallyExactlyOnce() throws Exception {
         String token = login();
         long sharedMessageId = 987_654_321L;
 
@@ -71,8 +71,8 @@ class DuplicateClaimConcurrencyTest {
                 }
             }
 
-            assertEquals(1, normalCount.get(), "Tam olarak bir istek NORMAL (fraud senaryosu çalıştırılmış) olmalıydı");
-            assertEquals(CONCURRENT_REQUESTS - 1, duplicateCount.get(), "Geri kalan tüm istekler DUPLICATE olmalıydı");
+            assertEquals(1, normalCount.get(), "Exactly one request should have been processed as NORMAL (fraud scenario executed)");
+            assertEquals(CONCURRENT_REQUESTS - 1, duplicateCount.get(), "All remaining requests should have been DUPLICATE");
         } finally {
             pool.shutdown();
         }

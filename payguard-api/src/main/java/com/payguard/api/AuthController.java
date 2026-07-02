@@ -2,6 +2,7 @@ package com.payguard.api;
 
 import com.payguard.api.security.JwtService;
 import com.payguard.api.security.TokenBlacklist;
+import com.payguard.application.common.ApiResult;
 import io.jsonwebtoken.Claims;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -16,11 +17,11 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 
 /**
- * Kimlik doğrulama (login/logout) uç noktaları — demo amaçlı token üretir.
+ * Authentication (login/logout) endpoints — issues demo tokens.
  *
- * NOT: Kullanıcı/şifre doğrulaması burada basit tutuldu (sabit demo şifresi). Üretimde
- * kullanıcı deposu + şifre hash (BCrypt) + rol/claim yönetimi eklenir.
- * Brute-force'a karşı uç nokta {@link com.payguard.api.security.LoginRateLimitFilter} ile sınırlıdır.
+ * NOTE: User/password verification is kept simple here (a fixed demo password). In production,
+ * add a user store + password hashing (BCrypt) + role/claim management.
+ * The endpoint is protected against brute-force by {@link com.payguard.api.security.LoginRateLimitFilter}.
  */
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -44,15 +45,15 @@ public class AuthController {
     @PostMapping("/login")
     public ApiResult<TokenResponse> login(@Valid @RequestBody LoginRequest request) {
         if (!constantTimeEquals(demoPassword, request.password())) {
-            return ApiResult.fail("Geçersiz kullanıcı adı veya şifre");
+            return ApiResult.fail("Invalid username or password");
         }
         return ApiResult.ok(new TokenResponse(jwtService.issue(request.username())));
     }
 
     /**
-     * Stateless JWT'de gerçek bir "logout" doğal olarak yoktur (token süresi dolana kadar geçerlidir).
-     * Burada token'ın jti'si kara listeye alınır; bundan sonraki istekler bu token ile reddedilir
-     * (bkz. {@link com.payguard.api.security.JwtAuthenticationFilter}).
+     * Stateless JWT has no natural "logout" (a token stays valid until it expires).
+     * Here the token's jti is blacklisted; subsequent requests with this token are rejected
+     * (see {@link com.payguard.api.security.JwtAuthenticationFilter}).
      */
     @PostMapping("/logout")
     public ApiResult<Void> logout(@RequestHeader(value = "Authorization", required = false) String authHeader) {
@@ -62,13 +63,14 @@ public class AuthController {
                 blacklist.revoke(claims.getId());
             }
         }
-        return ApiResult.ok(null, "Çıkış yapıldı");
+        return ApiResult.ok(null, "Logged out");
     }
 
     /**
-     * GÜVENLİK: String.equals erken çıkış yapar (ilk farklı karakterde durur) — bu, yanıt süresinden
-     * şifreyi karakter karakter çıkarmaya izin veren bir timing attack'a açıktır. MessageDigest.isEqual
-     * sabit zamanlıdır; karşılaştırma süresi şifrenin doğruluğuna bağlı olarak değişmez.
+     * SECURITY: String.equals exits early (stops at the first differing character) — this exposes
+     * a timing attack that lets an attacker derive the password character by character from
+     * response times. MessageDigest.isEqual is constant-time; the comparison duration does not
+     * depend on how correct the password is.
      */
     private boolean constantTimeEquals(String expected, String actual) {
         if (actual == null) {

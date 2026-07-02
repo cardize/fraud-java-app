@@ -3,16 +3,16 @@ package com.payguard.application.fraud;
 import com.payguard.domain.shared.ProductType;
 
 /**
- * Senaryo işleme PORT'u. Her ürün tipi (CARD, PF, PayCell...) için bir implementasyon olur.
+ * Scenario processing PORT. There is one implementation per product type (CARD, PF, PayCell...).
  *
- * Port APPLICATION'da; implementasyonlar (SpEL/DB kullanan) INFRASTRUCTURE'dadır.
- * Böylece application, kural motorunun teknik detayını bilmez.
+ * The port lives in APPLICATION; implementations (using SpEL/DB) live in INFRASTRUCTURE.
+ * This means application never knows the rule engine's technical details.
  */
 public interface ScenarioProcessor {
 
-    /** Bu işlemcinin desteklediği ürün tipi (factory eşlemesi için). */
+    /** The product type this processor supports (used for factory mapping). */
     ProductType supportedType();
 
-    /** Online senaryoları çalıştırır ve fraud yanıt kodunu döner. */
+    /** Runs the online scenarios and returns the fraud response code. */
     String processOnlineScenarios(int module, FraudParameters params);
 }

@@ -5,10 +5,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
- * Uygulama giriş noktası.
+ * Application entry point.
  *
- * - @SpringBootApplication: component-scan + auto-configuration + DI konteyneri
- * - @EnableScheduling: Outbox relay'in periyodik çalışması için
+ * - @SpringBootApplication: component scan + auto-configuration + DI container
+ * - @EnableScheduling: so the outbox relay can run periodically
  */
 @SpringBootApplication
 @EnableScheduling

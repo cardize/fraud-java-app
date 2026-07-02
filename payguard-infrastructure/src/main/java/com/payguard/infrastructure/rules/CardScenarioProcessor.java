@@ -8,8 +8,8 @@ import org.springframework.stereotype.Component;
 import java.util.concurrent.ExecutorService;
 
 /**
- * Kart (CARD) senaryo işlemcisi.
- * Tüm motor mantığı {@link BaseScenarioProcessor}'da; burada yalnızca ürün tipi belirtilir.
+ * Card (CARD) scenario processor.
+ * The entire engine logic lives in {@link BaseScenarioProcessor}; only the product type is declared here.
  */
 @Component
 public class CardScenarioProcessor extends BaseScenarioProcessor {

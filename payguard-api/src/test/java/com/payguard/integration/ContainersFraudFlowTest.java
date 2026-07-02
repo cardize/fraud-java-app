@@ -32,13 +32,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Gerçek altyapıyla (Docker: Postgres + Kafka) uçtan uca entegrasyon testi.
+ * End-to-end integration test against real infrastructure (Docker: Postgres + Kafka).
  *
- * H2/log yerine ÜRETİM-BENZERİ bileşenler:
- *  - Postgres: Flyway migration (flyway-database-postgresql) + JPA gerçek DB'de çalışır
- *  - Kafka: outbox relay mesajı GERÇEK Kafka'ya yayımlar; test bir consumer ile doğrular
+ * PRODUCTION-LIKE components instead of H2/logging:
+ *  - Postgres: Flyway migrations (flyway-database-postgresql) + JPA run on a real DB
+ *  - Kafka: the outbox relay publishes to REAL Kafka; the test verifies with a consumer
  *
- * ÇALIŞTIRMA ÖNKOŞULU: Docker. Docker yoksa test atlanır/başarısız olur (Testcontainers).
+ * PREREQUISITE: Docker. Without Docker the test is skipped/fails (Testcontainers).
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -62,7 +62,7 @@ class ContainersFraudFlowTest {
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
         registry.add("spring.datasource.driver-class-name", () -> "org.postgresql.Driver");
-        // Outbox -> gerçek Kafka
+        // Outbox -> real Kafka
         registry.add("payguard.outbox.publisher", () -> "kafka");
         registry.add("payguard.outbox.poll-interval-ms", () -> "1000");
         registry.add("spring.kafka.bootstrap-servers", kafka::getBootstrapServers);
@@ -79,7 +79,7 @@ class ContainersFraudFlowTest {
     private ObjectMapper objectMapper;
 
     @Test
-    void fraud_akisi_postgreste_calisir_ve_kafkaya_yayimlanir() throws Exception {
+    void fraudFlowRunsOnPostgresAndPublishesToKafka() throws Exception {
         // 1) login
         MvcResult login = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -89,7 +89,7 @@ class ContainersFraudFlowTest {
         String token = objectMapper.readTree(login.getResponse().getContentAsString())
                 .path("data").path("token").asText();
 
-        // 2) yüksek tutar -> REJECT (Postgres'te senaryolar seed edilmiş olmalı)
+        // 2) high amount -> REJECT (scenarios must have been seeded into Postgres)
         mockMvc.perform(post("/api/v1/transactions/get-fraud-response-for-card")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -98,7 +98,7 @@ class ContainersFraudFlowTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.fraudResponseCode").value("REJECT"));
 
-        // 3) Outbox relay mesajı gerçek Kafka'ya yayımlamış olmalı -> consumer ile doğrula
+        // 3) the outbox relay should have published to real Kafka -> verify with a consumer
         try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(consumerProps())) {
             consumer.subscribe(List.of(TOPIC));
             AtomicInteger received = new AtomicInteger();
@@ -109,7 +109,7 @@ class ContainersFraudFlowTest {
                         received.incrementAndGet();
                     }
                 });
-                assertTrue(received.get() > 0, "Kafka'da REJECT mesajı bekleniyordu");
+                assertTrue(received.get() > 0, "Expected a REJECT message on Kafka");
             });
         }
     }

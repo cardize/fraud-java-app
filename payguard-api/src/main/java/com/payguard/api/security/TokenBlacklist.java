@@ -8,12 +8,12 @@ import org.springframework.stereotype.Component;
 import java.time.Duration;
 
 /**
- * İptal edilmiş (logout edilmiş) token'ların jti'lerini (JWT ID) tutar.
+ * Holds the jtis (JWT IDs) of revoked (logged-out) tokens.
  *
- * Stateless JWT doğası gereği "logout" kavramına sahip değildir — token, süresi dolana kadar
- * her zaman geçerlidir. Bu kara liste, kullanıcı açıkça çıkış yaptığında token'ı erken
- * geçersiz kılmayı sağlar. Tüm token DEĞİL, yalnızca jti saklanır (ufak bellek ayak izi);
- * giriş, en uzun olası token ömrü kadar TTL'lidir — bunu aşan kayıt zaten gereksizdir.
+ * Stateless JWT inherently has no "logout" — a token stays valid until it expires. This blacklist
+ * lets a token be invalidated early when the user explicitly logs out. Only the jti is stored,
+ * NOT the whole token (tiny memory footprint); an entry's TTL equals the longest possible token
+ * lifetime — keeping it any longer would be pointless anyway.
  */
 @Component
 public class TokenBlacklist {

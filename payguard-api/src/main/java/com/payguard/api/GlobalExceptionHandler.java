@@ -12,37 +12,37 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.stream.Collectors;
 
 /**
- * Merkezi hata yakalayıcı.
+ * Centralized exception handler.
  *
- * GÜVENLİK: İç istisnaların stack-trace'i ve mesajı istemciye SIZDIRILMAZ; loglanır, istemciye
- * jenerik bir mesaj döner. Böylece bilgi ifşası (information disclosure) engellenir.
+ * SECURITY: Internal exceptions' stack traces and messages are NEVER leaked to the client; they
+ * are logged and a generic message is returned. This prevents information disclosure.
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    /** Bean Validation hatası → 400 + alan bazlı mesajlar. */
+    /** Bean Validation failure -> 400 + per-field messages. */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResult<Void>> handleValidation(MethodArgumentNotValidException ex) {
         String details = ex.getBindingResult().getFieldErrors().stream()
                 .map(fe -> fe.getField() + ": " + fe.getDefaultMessage())
                 .collect(Collectors.joining("; "));
-        return ResponseEntity.badRequest().body(ApiResult.fail("Doğrulama hatası — " + details));
+        return ResponseEntity.badRequest().body(ApiResult.fail("Validation error — " + details));
     }
 
-    /** İstemci kaynaklı hatalı argüman → 400. */
+    /** Client-caused bad argument -> 400. */
     @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class})
     public ResponseEntity<ApiResult<Void>> handleBadRequest(RuntimeException ex) {
-        log.warn("Geçersiz istek: {}", ex.getMessage());
-        return ResponseEntity.badRequest().body(ApiResult.fail("Geçersiz istek"));
+        log.warn("Invalid request: {}", ex.getMessage());
+        return ResponseEntity.badRequest().body(ApiResult.fail("Invalid request"));
     }
 
-    /** Yakalanmamış tüm hatalar → 500, detay loglanır ama dışarı verilmez. */
+    /** All uncaught errors -> 500; the detail is logged but never exposed. */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResult<Void>> handleUnexpected(Exception ex) {
-        log.error("Beklenmeyen hata", ex);
+        log.error("Unexpected error", ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResult.fail("Beklenmeyen bir hata oluştu"));
+                .body(ApiResult.fail("An unexpected error occurred"));
     }
 }

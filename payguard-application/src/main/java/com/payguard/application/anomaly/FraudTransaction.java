@@ -4,7 +4,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * Anomali kontrolüne giren işlem özeti.
+ * Transaction summary submitted for anomaly checking.
  */
 public record FraudTransaction(
         UUID transactionId,

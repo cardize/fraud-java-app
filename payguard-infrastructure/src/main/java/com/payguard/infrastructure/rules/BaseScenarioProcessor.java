@@ -14,12 +14,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 /**
- * Tüm ürün tipleri için ORTAK senaryo yürütme mantığı (paralel değerlendirme + öncelik kararı).
+ * SHARED scenario execution logic for all product types (parallel evaluation + priority decision).
  *
- * Alt sınıflar yalnızca desteklediği ürün tipini bildirir; tüm motor mantığı burada tek yerde.
+ * Subclasses only declare which product type they support; the entire engine logic lives here in
+ * one place.
  *
- * Karar: tüm senaryolar değerlendirilir; "hit" olanlardan EN YÜKSEK ÖNCELİKLİ (priority en küçük)
- * olanın fraudResponseCode'u döner. Hiç hit yoksa "APPROVE".
+ * Decision: all scenarios are evaluated; among the ones that "hit", the HIGHEST-PRIORITY one
+ * (lowest priority number) wins its fraudResponseCode. "APPROVE" if none hit.
  */
 public abstract class BaseScenarioProcessor implements ScenarioProcessor {
 
@@ -56,7 +57,7 @@ public abstract class BaseScenarioProcessor implements ScenarioProcessor {
     }
 
     private List<Scenario> evaluateParallel(List<Scenario> scenarios, FraudParameters params) {
-        // Paylaşımlı, sınırlı havuza iş gönderilir (her istekte yeni havuz açılmaz).
+        // Work is submitted to the shared, bounded pool (no new pool is opened per request).
         List<Future<Optional<Scenario>>> futures = scenarios.stream()
                 .map(scenario -> executor.submit(
                         () -> isHit(scenario, params) ? Optional.of(scenario) : Optional.<Scenario>empty()))
@@ -73,19 +74,19 @@ public abstract class BaseScenarioProcessor implements ScenarioProcessor {
         try {
             return f.get();
         } catch (Exception e) {
-            log.error("Senaryo değerlendirme hatası", e);
+            log.error("Scenario evaluation error", e);
             return Optional.empty();
         }
     }
 
-    /** Senaryonun TÜM kuralları true ise hit. */
+    /** A scenario hits only if ALL of its rules are true. */
     private boolean isHit(Scenario scenario, FraudParameters params) {
         for (Rule rule : scenario.rules()) {
             if (!ruleEvaluator.evaluate(rule, params)) {
                 return false;
             }
         }
-        log.info("HIT [{}] senaryo: {} -> {}", supportedType(), scenario.name(), scenario.fraudResponseCode());
+        log.info("HIT [{}] scenario: {} -> {}", supportedType(), scenario.name(), scenario.fraudResponseCode());
         return true;
     }
 }

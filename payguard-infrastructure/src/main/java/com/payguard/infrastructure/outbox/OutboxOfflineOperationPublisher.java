@@ -7,11 +7,12 @@ import org.springframework.stereotype.Component;
 import java.time.Instant;
 
 /**
- * OfflineOperationPublisher port'unun OUTBOX adapter'ı.
+ * OUTBOX adapter for the OfflineOperationPublisher port.
  *
- * publish() sadece DB'ye bir outbox satırı yazar. Handler bunu @Transactional içinde çağırdığından
- * satır, iş kaydıyla aynı transaction'da commit olur (atomik, kayıpsız). Gerçek yayım (Kafka/RabbitMQ)
- * sorumluluğu {@link OutboxRelay}'e aittir → "dual write" problemi çözülür.
+ * publish() only writes an outbox row to the DB. Since the handler calls this inside
+ * @Transactional, the row commits in the same transaction as the business record (atomic, no
+ * loss). Actual publishing (Kafka/RabbitMQ) is {@link OutboxRelay}'s responsibility — this solves
+ * the "dual write" problem.
  */
 @Component
 public class OutboxOfflineOperationPublisher implements OfflineOperationPublisher {

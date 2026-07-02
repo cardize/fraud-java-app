@@ -1,5 +1,5 @@
--- PayGuard ilk şema (Flyway V1).
--- Kolon adları Hibernate varsayılan snake_case stratejisiyle uyumludur (messageId -> message_id).
+-- PayGuard initial schema (Flyway V1).
+-- Column names match the schema produced by Hibernate's default snake_case strategy (messageId -> message_id).
 
 CREATE TABLE transactions (
     id                  UUID PRIMARY KEY,

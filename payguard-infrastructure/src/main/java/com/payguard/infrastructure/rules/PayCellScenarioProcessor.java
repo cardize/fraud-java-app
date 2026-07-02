@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 import java.util.concurrent.ExecutorService;
 
 /**
- * PayCell senaryo işlemcisi.
+ * PayCell scenario processor.
  */
 @Component
 public class PayCellScenarioProcessor extends BaseScenarioProcessor {

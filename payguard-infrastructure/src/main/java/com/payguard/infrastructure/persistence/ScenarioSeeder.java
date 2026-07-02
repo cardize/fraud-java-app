@@ -10,10 +10,10 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 /**
- * Başlangıçta örnek senaryoları DB'ye ekler (tablo boşsa).
+ * Seeds sample scenarios into the DB at startup (if the table is empty).
  *
- * In-memory DB her açılışta boş başladığından, akışı uçtan uca denenebilir kılmak için seed ediyoruz.
- * Üretimde bu sınıf kaldırılır; senaryolar yönetim arayüzünden girilir.
+ * The in-memory DB starts empty every boot, so we seed it to make the flow testable end-to-end.
+ * This class would be removed in production; scenarios are entered via a management UI instead.
  */
 @Component
 public class ScenarioSeeder implements ApplicationRunner {
@@ -29,26 +29,26 @@ public class ScenarioSeeder implements ApplicationRunner {
     @Override
     public void run(org.springframework.boot.ApplicationArguments args) {
         if (repository.existsByProductType(ProductType.CARD)) {
-            return; // zaten yüklenmiş
+            return; // already seeded
         }
 
-        // CARD senaryoları
+        // CARD scenarios
         ScenarioRow highAmount = new ScenarioRow(
-                "Yüksek Tutar", ProductType.CARD, 1, 1, "REJECT",
-                List.of(new RuleRow("Tutar eşiği aşıyor", RuleType.SIMPLE, "amountValue > threshold")));
+                "High Amount", ProductType.CARD, 1, 1, "REJECT",
+                List.of(new RuleRow("Amount exceeds threshold", RuleType.SIMPLE, "amountValue > threshold")));
 
         ScenarioRow nightLargeSpend = new ScenarioRow(
-                "Gece Yüksek Harcama", ProductType.CARD, 1, 2, "REVIEW",
+                "Large Nighttime Spend", ProductType.CARD, 1, 2, "REVIEW",
                 List.of(
-                        new RuleRow("Gece saati", RuleType.SIMPLE, "hourOfDay >= 0 and hourOfDay < 6"),
-                        new RuleRow("Tutar > 1000", RuleType.SIMPLE, "amountValue > 1000")));
+                        new RuleRow("Nighttime hour", RuleType.SIMPLE, "hourOfDay >= 0 and hourOfDay < 6"),
+                        new RuleRow("Amount > 1000", RuleType.SIMPLE, "amountValue > 1000")));
 
-        // PF için örnek bir senaryo (yeni ürün tipinin de DB'den çalıştığını göstermek için)
+        // A sample scenario for PF (to show the new product type also works from the DB)
         ScenarioRow pfHighAmount = new ScenarioRow(
-                "PF Yüksek Tutar", ProductType.PF, 1, 1, "REJECT",
-                List.of(new RuleRow("PF tutar > 10000", RuleType.SIMPLE, "amountValue > 10000")));
+                "PF High Amount", ProductType.PF, 1, 1, "REJECT",
+                List.of(new RuleRow("PF amount > 10000", RuleType.SIMPLE, "amountValue > 10000")));
 
         repository.saveAll(List.of(highAmount, nightLargeSpend, pfHighAmount));
-        log.info("Örnek senaryolar yüklendi: {} adet", repository.count());
+        log.info("Sample scenarios loaded: {} total", repository.count());
     }
 }

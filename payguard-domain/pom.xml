@@ -12,9 +12,9 @@
 
     <artifactId>payguard-domain</artifactId>
     <name>PayGuard Domain</name>
-    <description>Entity, aggregate, enum'lar (çekirdek iş modeli)</description>
+    <description>Entities, aggregates, enums (core business model)</description>
 
-    <!-- En içteki katman: Spring'e bağımlı DEĞİL. Sadece JPA anotasyon API'si. -->
+    <!-- Innermost layer: does NOT depend on Spring. Only the JPA annotation API. -->
 
     <dependencies>
         <dependency>

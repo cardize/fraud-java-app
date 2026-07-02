@@ -9,13 +9,13 @@ import javax.sql.DataSource;
 import java.util.Map;
 
 /**
- * Her tenant DataSource'una ayrı ayrı Flyway migration uygular.
+ * Applies Flyway migrations to each tenant DataSource separately.
  *
- * Çok-kiracıda Spring Boot'un tek otomatik Flyway'i yetmez (sadece primary DataSource'a koşar).
- * Bu sınıf @PostConstruct'ta tüm tenant DB'lerini gezip programatik Flyway.migrate() çağırır
- * → her tenant şeması kurulur.
+ * In multi-tenant mode, Spring Boot's single automatic Flyway run isn't enough (it only targets
+ * the primary DataSource). This class walks every tenant DB at @PostConstruct and calls
+ * Flyway.migrate() programmatically for each -> every tenant's schema gets created.
  *
- * Sadece 'multitenant' profilinde, MultiTenantDataSourceConfig tarafından bean olarak üretilir.
+ * Only produced as a bean by MultiTenantDataSourceConfig, and only in the 'multitenant' profile.
  */
 public class MultiTenantFlywayMigrator {
 
@@ -36,7 +36,7 @@ public class MultiTenantFlywayMigrator {
                     .baselineOnMigrate(true)
                     .load();
             flyway.migrate();
-            log.info("Flyway migration tamamlandı: tenant={}", tenant);
+            log.info("Flyway migration complete: tenant={}", tenant);
         });
     }
 }

@@ -12,10 +12,11 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 /**
- * Her istekte 'X-Tenant' header'ından kiracıyı okuyup TenantContext'e koyar, istek sonunda temizler.
+ * On every request, reads the tenant from the 'X-Tenant' header into TenantContext, and clears it
+ * when the request finishes.
  *
- * Tek-kiracı modunda zararsızdır (routing DataSource yoksa thread-local kullanılmaz).
- * Güvenlik filtresinden ÖNCE çalışsın diye yüksek öncelikli.
+ * Harmless in single-tenant mode (the thread-local is unused when there is no routing DataSource).
+ * High priority so it runs BEFORE the security filter.
  */
 @Component
 @Order(1)
@@ -31,7 +32,7 @@ public class TenantFilter extends OncePerRequestFilter {
             }
             chain.doFilter(request, response);
         } finally {
-            TenantContext.clear();   // thread havuzunda sızıntı olmasın
+            TenantContext.clear();   // no leakage across the thread pool
         }
     }
 }

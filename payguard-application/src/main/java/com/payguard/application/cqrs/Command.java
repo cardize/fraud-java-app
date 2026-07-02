@@ -1,7 +1,7 @@
 package com.payguard.application.cqrs;
 
 /**
- * Bir komut/sorgu mesajı. Dönüş tipini R generic parametresi taşır.
+ * A command/query message. The R generic parameter carries the return type.
  */
 public interface Command<R> {
 }

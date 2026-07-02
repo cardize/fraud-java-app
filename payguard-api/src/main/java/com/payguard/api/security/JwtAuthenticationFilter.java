@@ -14,8 +14,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 /**
- * Her istekte Bearer token'ı doğrulayıp SecurityContext'e kimlik koyan filtre.
- * İmzası geçerli olsa bile kara listede (logout edilmiş) bir token reddedilir.
+ * Filter that validates the Bearer token on every request and puts the identity into the
+ * SecurityContext. A blacklisted (logged-out) token is rejected even if its signature is valid.
  */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {

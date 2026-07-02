@@ -11,13 +11,14 @@ import org.springframework.stereotype.Component;
 import java.time.ZoneOffset;
 
 /**
- * İstatistiksel + kural tabanlı hibrit anomali tespiti.
- * Hibrit skor: finalScore = (zScore + frekans + zaman + model) / 4.
+ * Hybrid statistical + rule-based anomaly detection.
+ * Hybrid score: finalScore = (zScore + frequency + time + model) / 4.
  *
- * NOT: Gerçek ML modeli burada saf-istatistikle temsil edilir. Bir model (örn. DJL/ONNX) takmak için
- * modelScore'u model çıktısıyla değiştirmek yeterli — arayüz/akış aynı kalır.
+ * NOTE: The real ML model is represented here by pure statistics. To plug in an actual model
+ * (e.g. DJL/ONNX), it's enough to replace modelScore with the model's output — the interface/flow
+ * stays the same.
  *
- * Aktif olma koşulu: payguard.ai.enabled=true (varsayılan). false ise {@link NoOpAnomalyDetector} devreye girer.
+ * Active when: payguard.ai.enabled=true (default). If false, {@link NoOpAnomalyDetector} takes over.
  */
 @Component
 @ConditionalOnProperty(name = "payguard.ai.enabled", havingValue = "true", matchIfMissing = true)
@@ -36,10 +37,10 @@ public class StatisticalAnomalyDetector implements AnomalyDetector {
     public AnomalyResult check(FraudTransaction tx) {
         CardStatistics stats = statisticsStore.getOrCreate(tx.shadowCardNo());
 
-        // Model henüz "öğrenmediyse" (yeterli geçmiş yok) ihtiyatlı davran
+        // Be cautious while the model hasn't "learned" yet (not enough history)
         if (stats.count() < 5) {
             stats.update(tx.amount(), tx.transactionDate());
-            return new AnomalyResult(true, 1.0, "Yetersiz geçmiş — ihtiyaten şüpheli");
+            return new AnomalyResult(true, 1.0, "Insufficient history — treated as suspicious as a precaution");
         }
 
         int hourOfDay = tx.transactionDate().atZone(ZoneOffset.UTC).getHour();
@@ -49,11 +50,11 @@ public class StatisticalAnomalyDetector implements AnomalyDetector {
         double zScore = std > 0 ? Math.min(1.0, Math.abs(tx.amount() - mean) / (3 * std)) : 0.0;
         double frequencyScore = Math.min(1.0, stats.frequencyLastHour(tx.transactionDate()) / 10.0);
         double timeScore = (hourOfDay >= 0 && hourOfDay < 6) ? 1.0 : 0.0;
-        double modelScore = 0.0; // <-- DJL/ONNX model çıktısı buraya
+        double modelScore = 0.0; // <-- DJL/ONNX model output goes here
 
         double finalScore = (zScore + frequencyScore + timeScore + modelScore) / 4.0;
 
-        // Ek sezgisel anomali kuralları
+        // Additional heuristic anomaly rules
         boolean anomaly = finalScore > SCORE_THRESHOLD
                 || (mean > 0 && tx.amount() > mean * 3)
                 || (hourOfDay < 6 && tx.amount() > mean * 2)
@@ -64,7 +65,7 @@ public class StatisticalAnomalyDetector implements AnomalyDetector {
                 zScore, frequencyScore, timeScore, finalScore, mean, std);
 
         stats.update(tx.amount(), tx.transactionDate());
-        log.info("Anomali kontrol [{}]: anomaly={} {}", tx.shadowCardNo(), anomaly, reason);
+        log.info("Anomaly check [{}]: anomaly={} {}", tx.shadowCardNo(), anomaly, reason);
 
         return new AnomalyResult(anomaly, finalScore, reason);
     }

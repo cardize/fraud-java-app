@@ -8,8 +8,8 @@ import org.springframework.stereotype.Component;
 import java.util.concurrent.ExecutorService;
 
 /**
- * Payment Facilitator (PF) senaryo işlemcisi.
- * Yeni ürün eklemenin ne kadar kolay olduğunu gösterir: sadece bu bean + supportedType().
+ * Payment Facilitator (PF) scenario processor.
+ * Shows how easy it is to add a new product: just this bean + supportedType().
  */
 @Component
 public class PfScenarioProcessor extends BaseScenarioProcessor {

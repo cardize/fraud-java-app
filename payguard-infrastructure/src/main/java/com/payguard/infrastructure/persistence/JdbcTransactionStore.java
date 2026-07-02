@@ -13,16 +13,16 @@ import java.sql.Timestamp;
 import java.util.UUID;
 
 /**
- * TransactionStore portunun JdbcTemplate (ham SQL) ADAPTER'ı — "hot path" implementasyonu.
+ * JdbcTemplate (raw SQL) ADAPTER for the TransactionStore port — the "hot path" implementation.
  *
- * Sıcak yolda (her işlemde çalışan kayıt) ORM yükünü atlayıp doğrudan SQL kullanır:
- * "CRUD = JPA, sıcak yol = JdbcTemplate" ayrımı.
+ * Skips ORM overhead on the hot path (the record executed on every transaction) and uses direct
+ * SQL: the "CRUD = JPA, hot path = JdbcTemplate" split.
  *
- * Aktive etmek için: application.yml -> payguard.persistence.transaction-store: jdbc
- * (Aynı anda yalnızca BİR TransactionStore bean'i aktif olur; @ConditionalOnProperty bunu sağlar.)
+ * To activate: application.yml -> payguard.persistence.transaction-store: jdbc
+ * (Only ONE TransactionStore bean is ever active at a time; @ConditionalOnProperty guarantees this.)
  *
- * NOT: Kolon adları Hibernate'in varsayılan snake_case stratejisiyle oluşan şemaya göredir
- * (messageId -> message_id). Üretimde şema migration ile sabitlenir (Flyway/Liquibase).
+ * NOTE: Column names follow the schema produced by Hibernate's default snake_case strategy
+ * (messageId -> message_id). Pinned down by the schema migrations in production (Flyway/Liquibase).
  */
 @Component
 @ConditionalOnProperty(name = "payguard.persistence.transaction-store", havingValue = "jdbc")
@@ -34,7 +34,7 @@ public class JdbcTransactionStore implements TransactionStore {
         this.jdbc = jdbc;
     }
 
-    /** REQUIRES_NEW gerekçesi için bkz. {@link JpaTransactionStore#claimMessage}. */
+    /** See {@link JpaTransactionStore#claimMessage} for the rationale behind REQUIRES_NEW. */
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public boolean claimMessage(long messageId, int module) {
@@ -56,7 +56,7 @@ public class JdbcTransactionStore implements TransactionStore {
 
     @Override
     public void save(Transaction t) {
-        // UUID PK olduğundan upsert yerine basit insert/merge. H2'de MERGE kullanıyoruz (idempotent).
+        // UUID PK, so a simple insert/merge instead of an upsert. We use MERGE on H2 (idempotent).
         jdbc.update(
                 "MERGE INTO transactions " +
                 "(id, message_id, module, shadow_card_no, amount, merchant_id, transaction_date, control_code, fraud_response_code, latest_request) " +

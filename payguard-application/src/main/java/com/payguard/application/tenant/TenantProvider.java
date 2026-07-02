@@ -1,13 +1,14 @@
 package com.payguard.application.tenant;
 
 /**
- * O anki isteğin kiracısını (tenant) sorgulama PORT'u.
+ * PORT for querying the current request's tenant.
  *
- * Application katmanı kiracı çözümlemesinin teknik detayını (thread-local, header okuma...)
- * bilmez; yalnızca bu arayüzü kullanır. İmplementasyon (adapter) INFRASTRUCTURE'dadır.
+ * The application layer doesn't know the technical details of tenant resolution (thread-local,
+ * header parsing...) — it only uses this interface. The implementation (adapter) lives in
+ * INFRASTRUCTURE.
  */
 public interface TenantProvider {
 
-    /** Geçerli isteğin kiracı kimliği; tek-kiracı modunda/tenant set edilmemişse "default". */
+    /** The current request's tenant id; "default" in single-tenant mode / when no tenant is set. */
     String currentTenant();
 }

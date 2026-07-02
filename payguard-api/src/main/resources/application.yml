@@ -1,24 +1,25 @@
-# PayGuard — uygulama konfigürasyonu
+# PayGuard — application configuration
 
 spring:
   application:
     name: payguard
 
-  # Java 21 sanal thread'leri — bloklayan istek/IO işlerinde yüksek eşzamanlılık (düşük bellek).
+  # Java 21 virtual threads — high concurrency at low memory for blocking request/IO work.
   threads:
     virtual:
       enabled: true
 
-  # H2 in-memory veritabanı (geliştirme/çalıştırma için).
-  # Üretimde PostgreSQL'e geçilir: org.postgresql:postgresql + url jdbc:postgresql://...
+  # H2 in-memory database (for development/running locally).
+  # Production switches to PostgreSQL: org.postgresql:postgresql + url jdbc:postgresql://...
   datasource:
     url: jdbc:h2:mem:payguard;DB_CLOSE_DELAY=-1
     driver-class-name: org.h2.Driver
     username: sa
     password:
-    # Sanal thread'ler (yukarıda) çok sayıda eşzamanlı isteğe izin verir; DB havuzu BUNDAN BAĞIMSIZ
-    # ve sınırlı kalmalı — aksi halde DB az sayıda gerçek bağlantıyla boğulur. Havuz dolarsa istek
-    # sonsuza dek beklemek yerine 3 saniyede hızlıca başarısız olur (connection-timeout).
+    # Virtual threads (above) allow a very high number of concurrent requests; the DB pool must
+    # stay INDEPENDENT of that and bounded — otherwise the DB drowns under its few real
+    # connections. When the pool is exhausted, a request fails fast in 3 seconds
+    # (connection-timeout) instead of waiting forever.
     hikari:
       maximum-pool-size: 20
       minimum-idle: 5
@@ -27,71 +28,87 @@ spring:
 
   jpa:
     hibernate:
-      # Şema artık FLYWAY'in sorumluluğunda (db/migration/V*.sql). Hibernate sadece kullanır.
-      # İpucu: doğruladıktan sonra 'validate'e çekersen entity-şema uyumu derleme sonrası kontrol edilir.
+      # The schema is now FLYWAY's responsibility (db/migration/V*.sql). Hibernate only consumes it.
+      # Tip: switching to 'validate' once verified checks entity-schema consistency after builds.
       ddl-auto: none
     show-sql: true
     properties:
       hibernate:
         format_sql: true
 
-  # Flyway: classpath:db/migration altındaki V*.sql dosyalarını sırayla uygular.
+  # Flyway: applies the V*.sql files under classpath:db/migration in order.
   flyway:
     enabled: true
     baseline-on-migrate: true
-  # Liquibase varsayılanda KAPALI (Flyway ile çakışmasın). 'liquibase' profiliyle açılır.
+  # Liquibase is OFF by default (so it doesn't clash with Flyway). Enabled by the 'liquibase' profile.
   liquibase:
     enabled: false
 
   h2:
     console:
-      enabled: true         # http://localhost:8080/h2-console ile DB'yi gör
+      enabled: true         # inspect the DB at http://localhost:8080/h2-console
 
-  # Cache sağlayıcısı. Varsayılan: Caffeine (sınırlı boyut + TTL) — Redis kurmadan çalışır.
-  # Redis için: uygulamayı 'redis' profiliyle başlat (--spring.profiles.active=redis), bkz. application-redis.yml
+  # Cache provider. Default: Caffeine (bounded size + TTL) — works without installing Redis.
+  # For Redis: start the app with the 'redis' profile (--spring.profiles.active=redis), see application-redis.yml
   cache:
     type: caffeine
     caffeine:
       spec: maximumSize=1000,expireAfterWrite=10m
 
-  # Düzgün kapanış: yeni istek kabul edilmez, devam edenler tamamlanır (deploy güvenliği).
+  # Graceful shutdown: no new requests are accepted, in-flight ones complete (deploy safety).
   lifecycle:
     timeout-per-shutdown-phase: 20s
 
 server:
   port: 8080
   shutdown: graceful
+  # Gzip compression for JSON responses — reduces bandwidth and latency on growing
+  # report/scenario-list endpoints. Responses under 1KB aren't compressed (the compression
+  # overhead would exceed the gain).
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/plain
+    min-response-size: 1024
 
-# Senaryo motoru ayarları
+# Scenario engine settings
 payguard:
   scenario:
     parallel: true
     max-parallelism: 10
   persistence:
-    # İşlem yazımı için adapter seçimi: jpa (varsayılan) | jdbc (ham SQL hot-path)
+    # Adapter selection for transaction writes: jpa (default) | jdbc (raw-SQL hot path)
     transaction-store: jpa
   ai:
-    # Anomali tespiti açık/kapalı
+    # Anomaly detection on/off
     enabled: true
   security:
-    # HMAC-SHA256 için en az 256-bit (32+ karakter) gizli anahtar.
-    # Üretimde PAYGUARD_JWT_SECRET ortam değişkeniyle override edilir; gömülü değer yalnızca dev içindir.
+    # Secret key of at least 256 bits (32+ characters) for HMAC-SHA256.
+    # Overridden in production via the PAYGUARD_JWT_SECRET env variable; the embedded value is dev-only.
     jwt-secret: "${PAYGUARD_JWT_SECRET:payguard-dev-secret-key-change-me-please-32+chars}"
-    jwt-expiration-ms: "${PAYGUARD_JWT_EXPIRATION_MS:3600000}"   # 1 saat
+    jwt-expiration-ms: "${PAYGUARD_JWT_EXPIRATION_MS:3600000}"   # 1 hour
     demo-password: "${PAYGUARD_DEMO_PASSWORD:payguard123}"
     login-rate-limit:
-      capacity: 5          # IP başına pencere içinde izin verilen deneme sayısı
+      capacity: 5          # attempts allowed per IP within the window
       window-seconds: 60
   outbox:
     poll-interval-ms: 5000
-    cleanup-interval-ms: 86400000   # 24 saat — PROCESSED kayıt temizliği
-    retention-days: 7               # PROCESSED kayıtlar 7 günden eski ise silinir
+    cleanup-interval-ms: 86400000   # 24 hours — PROCESSED record cleanup
+    retention-days: 7               # PROCESSED records older than 7 days are deleted
     destination: "payguard.offline-operations"
-    # Yayımcı: logging (varsayılan, broker'sız) | kafka | rabbit
+    # Publisher: logging (default, no broker) | kafka | rabbit
     publisher: logging
 
-# Actuator: sağlık/metrik uçları. /actuator/health public.
+# Actuator: health/metrics endpoints.
+#
+# SECURITY/OPS: Management endpoints are served on a SEPARATE port (9090) — a Spring Boot
+# behavior independent of the public API's (8080) JWT security chain. Without this, a Prometheus
+# scraper (which cannot perform an interactive JWT login) could never reach
+# /actuator/prometheus — metrics collection would silently not work. Standard practice: 9090 is
+# only open at the network/firewall level (VPC, in-cluster) and closed to the outside; it needs
+# no JWT because it should be unreachable from outside anyway.
 management:
+  server:
+    port: "${PAYGUARD_MANAGEMENT_PORT:9090}"
   endpoints:
     web:
       exposure:
@@ -100,7 +117,7 @@ management:
     health:
       show-details: when_authorized
   health:
-    # Broker'lar opsiyonel; çalışmıyorken /actuator/health DOWN olmasın
+    # Brokers are optional; /actuator/health shouldn't go DOWN while they're not running
     rabbit:
       enabled: false
 

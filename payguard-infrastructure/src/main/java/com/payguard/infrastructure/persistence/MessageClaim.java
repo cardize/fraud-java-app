@@ -8,11 +8,11 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
 /**
- * Atomik mesaj-claim satırı: race-free duplicate tespiti için kullanılır.
+ * Atomic message-claim row: used for race-free duplicate detection.
  *
- * Aynı (messageId, module) çiftine ait İKİNCİ insert denemesi, DB'deki UNIQUE constraint
- * tarafından reddedilir. Bu, "önce SELECT ile kontrol et, sonra INSERT et" deseninin yarış
- * koşuluna (TOCTOU) açık olmasının yerini alır — INSERT'in kendisi atomik mutex görevi görür.
+ * A SECOND insert attempt for the same (messageId, module) pair is rejected by the database's
+ * UNIQUE constraint. This replaces the "SELECT to check first, then INSERT" pattern's exposure to
+ * a race condition (TOCTOU) — the INSERT itself acts as an atomic mutex.
  */
 @Entity
 @Table(name = "message_claims", uniqueConstraints = @UniqueConstraint(columnNames = {"message_id", "module"}))

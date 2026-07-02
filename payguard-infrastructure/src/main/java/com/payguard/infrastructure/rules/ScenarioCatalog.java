@@ -13,8 +13,8 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 /**
- * Senaryoları DB'den yükler ve persistence modelini (ScenarioRow/RuleRow) domain modeline
- * (Scenario/Rule record) çevirir.
+ * Loads scenarios from the DB and maps the persistence model (ScenarioRow/RuleRow) to the domain
+ * model (Scenario/Rule records).
  */
 @Component
 public class ScenarioCatalog {
@@ -26,15 +26,15 @@ public class ScenarioCatalog {
     }
 
     /**
-     * Senaryoları yükler; sonuç "scenarios" cache'inde (kiracı + ürün tipi + modül) saklanır
-     * (her işlemde DB'ye gitmemek için).
+     * Loads scenarios; the result is cached under "scenarios" (keyed by tenant + product type +
+     * module) so we don't hit the DB on every transaction.
      *
-     * GÜVENLİK/BUG DÜZELTMESİ: Önceki anahtar yalnızca productType+module idi — TENANT'I
-     * İÇERMİYORDU. multitenant profilinde bu, çapraz-kiracı cache zehirlenmesine yol açardı:
-     * Tenant A için yüklenen kural seti cache'e yazılır, hemen ardından gelen Tenant B isteği
-     * AYNI anahtardan (CARD-1 gibi) cache hit alıp A'nın kurallarını B'nin işlemine uygulardı
-     * (yanlış fraud kararı + olası uyumluluk ihlali). Anahtar artık TenantContext'ten okunan
-     * geçerli kiracıyı da içeriyor.
+     * SECURITY/BUGFIX: The previous key was productType+module only — it did NOT include the
+     * TENANT. In the multitenant profile, this caused cross-tenant cache poisoning: the rule set
+     * loaded for Tenant A would be cached, and the very next Tenant B request would get a cache
+     * hit under the SAME key (e.g. "CARD-1") and have A's rules applied to B's transaction (a
+     * wrong fraud decision plus a possible compliance violation). The key now also includes the
+     * current tenant read from TenantContext.
      */
     @Cacheable(value = "scenarios",
             key = "T(com.payguard.infrastructure.tenant.TenantContext).currentOrDefault() + '-' + #productType + '-' + #module")
@@ -45,7 +45,7 @@ public class ScenarioCatalog {
     }
 
     /**
-     * Tüm senaryo cache'ini temizler (kural/senaryo değişince çağrılır).
+     * Clears the entire scenario cache (called when rules/scenarios change).
      */
     @CacheEvict(value = "scenarios", allEntries = true)
     public void evictAll() {

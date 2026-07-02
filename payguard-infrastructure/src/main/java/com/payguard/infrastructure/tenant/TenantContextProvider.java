@@ -4,7 +4,7 @@ import com.payguard.application.tenant.TenantProvider;
 import org.springframework.stereotype.Component;
 
 /**
- * TenantProvider portunun ADAPTER'ı — geçerli kiracıyı TenantContext (thread-local) üzerinden okur.
+ * ADAPTER for the TenantProvider port — reads the current tenant via TenantContext (thread-local).
  */
 @Component
 public class TenantContextProvider implements TenantProvider {

@@ -1,10 +1,10 @@
 package com.payguard.infrastructure.tenant;
 
 /**
- * O anki isteğin kiracısını (tenant) thread-local olarak tutar.
+ * Holds the current request's tenant as a thread-local.
  *
- * Her HTTP isteği başında set edilir (TenantFilter), istek bitince temizlenir.
- * RoutingDataSource hangi DB'ye gidileceğini buradan okur.
+ * Set at the start of every HTTP request (TenantFilter), cleared when the request ends.
+ * RoutingDataSource reads this to decide which DB to use.
  */
 public final class TenantContext {
 
@@ -21,7 +21,7 @@ public final class TenantContext {
         return CURRENT.get();
     }
 
-    /** get()'in null-safe hali; tenant set edilmemişse (tek-kiracı modu) "default" döner. */
+    /** Null-safe version of get(); returns "default" when no tenant is set (single-tenant mode). */
     public static String currentOrDefault() {
         String tenant = CURRENT.get();
         return tenant != null ? tenant : "default";

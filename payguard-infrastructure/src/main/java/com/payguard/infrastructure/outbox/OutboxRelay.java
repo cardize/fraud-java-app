@@ -14,10 +14,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Outbox relay: PENDING mesajları periyodik olarak işleyip yayımlar (PROCESSED yapar).
+ * Outbox relay: periodically processes and publishes PENDING messages (marking them PROCESSED).
  *
- * Kaynak in-memory değil KALICI DB. Proses çökse bile PENDING kayıtlar DB'de durur ve yeniden
- * başlayınca işlenir. Yayım hedefi seçili MessagePublisher (logging/kafka/rabbit) ile en-az-bir-kez teslim.
+ * The source is a PERSISTENT DB, not in-memory. Even if the process crashes, PENDING records stay
+ * in the DB and get processed on restart. Publishing goes through whichever MessagePublisher is
+ * selected (logging/kafka/rabbit), with at-least-once delivery.
  */
 @Component
 public class OutboxRelay {
@@ -48,8 +49,8 @@ public class OutboxRelay {
         if (batch.isEmpty()) {
             return;
         }
-        // Mesaj bazlı izolasyon: biri başarısız olursa diğerleri yine işlenir; başarısız olan
-        // PENDING kalıp sonraki turda yeniden denenir (zehirli mesaj kuyruğu tıkamaz).
+        // Per-message isolation: if one fails the others still get processed; the failed one
+        // stays PENDING and is retried on the next tick (a poison message can't block the queue).
         List<OutboxMessage> processed = new ArrayList<>();
         for (OutboxMessage msg : batch) {
             try {
@@ -57,18 +58,18 @@ public class OutboxRelay {
                 msg.markProcessed(Instant.now());
                 processed.add(msg);
             } catch (Exception e) {
-                log.error("Outbox mesajı yayımlanamadı (id={}), sonraki turda yeniden denenecek", msg.getId(), e);
+                log.error("Failed to publish outbox message (id={}), will retry on the next tick", msg.getId(), e);
             }
         }
         if (!processed.isEmpty()) {
             repository.saveAll(processed);
-            log.info("Outbox: {}/{} mesaj işlendi", processed.size(), batch.size());
+            log.info("Outbox: processed {}/{} messages", processed.size(), batch.size());
         }
     }
 
     /**
-     * Eski PROCESSED kayıtları temizler — outbox tablosunun sınırsız büyümesini önler.
-     * Günlük bir kez çalışır (relay döngüsünden çok daha seyrek; bu sadece bakım/retention işi).
+     * Cleans up old PROCESSED records — prevents the outbox table from growing unbounded.
+     * Runs once a day (much less frequently than the relay loop; this is purely maintenance/retention work).
      */
     @Scheduled(fixedDelayString = "${payguard.outbox.cleanup-interval-ms:86400000}")
     @Transactional
@@ -76,12 +77,12 @@ public class OutboxRelay {
         Instant cutoff = Instant.now().minusSeconds(retentionDays * 86_400L);
         int deleted = repository.deleteProcessedBefore(cutoff);
         if (deleted > 0) {
-            log.info("Outbox: {} eski PROCESSED kayıt temizlendi (retention={} gün)", deleted, retentionDays);
+            log.info("Outbox: cleaned up {} old PROCESSED records (retention={} days)", deleted, retentionDays);
         }
     }
 
     private void publish(OutboxMessage msg) {
-        // Seçili yayımcıya (logging/kafka/rabbit) gönder. Gerçek broker'a en-az-bir-kez teslim.
+        // Send to the selected publisher (logging/kafka/rabbit). At-least-once delivery to the real broker.
         String payload = String.format("{\"type\":\"%s\",\"transactionId\":\"%s\",\"module\":%d,\"fraudResponseCode\":\"%s\",\"tenant\":\"%s\"}",
                 msg.getType(), msg.getTransactionId(), msg.getModule(), msg.getFraudResponseCode(), msg.getTenant());
         messagePublisher.publish(destination, payload);

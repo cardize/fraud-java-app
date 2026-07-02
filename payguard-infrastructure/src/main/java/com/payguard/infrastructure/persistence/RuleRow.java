@@ -11,10 +11,11 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 /**
- * Kural tablosu satırı (JPA entity / persistence modeli).
+ * Rule table row (JPA entity / persistence model).
  *
- * Bilinçli ayrım: bu PERSISTENCE modeli; domain'deki {@link com.payguard.domain.rule.Rule}
- * record'u ise saf İŞ modeli. ScenarioCatalog ikisini birbirine map'ler.
+ * Deliberate separation: this is the PERSISTENCE model; the domain's
+ * {@link com.payguard.domain.rule.Rule} record is the pure BUSINESS model. ScenarioCatalog maps
+ * between the two.
  */
 @Entity
 @Table(name = "rules")

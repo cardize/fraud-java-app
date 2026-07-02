@@ -13,11 +13,11 @@ import java.util.Date;
 import java.util.UUID;
 
 /**
- * JWT üretir ve doğrular (HMAC-SHA256, simetrik gizli anahtar).
+ * Issues and validates JWTs (HMAC-SHA256, symmetric secret key).
  *
- * Simetrik anahtar IdP gerektirmez; üretimde IdP/JWKS'e geçilir.
- * Her token benzersiz bir jti (JWT ID) taşır — logout sırasında tüm token'ı saklamadan
- * yalnızca jti'yi kara listeye almak için kullanılır (bkz. {@link TokenBlacklist}).
+ * A symmetric key needs no IdP; production would move to an IdP/JWKS.
+ * Every token carries a unique jti (JWT ID) — used to blacklist just the jti on logout instead
+ * of storing the whole token (see {@link TokenBlacklist}).
  */
 @Service
 public class JwtService {
@@ -42,7 +42,7 @@ public class JwtService {
                 .compact();
     }
 
-    /** Token geçerliyse (imza + süre) claim'lerini döner; geçersizse null. */
+    /** Returns the claims if the token is valid (signature + expiry); null otherwise. */
     public Claims validate(String token) {
         try {
             return Jwts.parser()

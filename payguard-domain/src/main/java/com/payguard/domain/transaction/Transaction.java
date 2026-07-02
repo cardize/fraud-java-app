@@ -12,7 +12,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * Kalıcı işlem kaydı (JPA entity). Eşleme JPA anotasyonlarıyla (@Entity, @Id...) yapılır.
+ * Persistent transaction record (JPA entity). Mapping is done via JPA annotations (@Entity, @Id...).
  */
 @Entity
 @Table(name = "transactions")
@@ -35,7 +35,7 @@ public class Transaction {
     private boolean latestRequest;
 
     protected Transaction() {
-        // JPA için boş constructor
+        // no-arg constructor required by JPA
     }
 
     public Transaction(UUID id, long messageId, int module, String shadowCardNo,

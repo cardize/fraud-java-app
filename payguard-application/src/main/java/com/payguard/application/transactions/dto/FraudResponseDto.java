@@ -3,7 +3,7 @@ package com.payguard.application.transactions.dto;
 import java.util.UUID;
 
 /**
- * İstemciye dönen fraud yanıtı.
+ * Fraud response returned to the client.
  */
 public record FraudResponseDto(
         UUID transactionId,

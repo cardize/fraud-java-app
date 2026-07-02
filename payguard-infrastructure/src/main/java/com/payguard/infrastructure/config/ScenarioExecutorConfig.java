@@ -8,11 +8,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * Senaryo değerlendirmesi için PAYLAŞIMLI thread havuzu.
+ * SHARED thread pool for scenario evaluation.
  *
- * Daha önce her istekte yeni bir havuç açılıp kapatılıyordu (pahalı ve ölçeklenmez). Bu bean
- * uygulama boyunca tek bir havuz tutar; sınırı payguard.scenario.max-parallelism ile belirlenir.
- * destroyMethod=shutdown ile uygulama kapanırken düzgünce kapatılır.
+ * Previously a new pool was opened and closed on every request (expensive and unable to scale).
+ * This bean keeps a single pool for the whole application lifetime; its size is controlled by
+ * payguard.scenario.max-parallelism. destroyMethod=shutdown closes it cleanly on application shutdown.
  */
 @Configuration
 public class ScenarioExecutorConfig {

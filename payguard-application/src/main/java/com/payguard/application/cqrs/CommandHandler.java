@@ -1,14 +1,14 @@
 package com.payguard.application.cqrs;
 
 /**
- * Bir komutu işleyen handler.
+ * A handler that processes a command.
  *
- * @param <C> işlenecek komut tipi
- * @param <R> komutun dönüş tipi
+ * @param <C> the command type handled
+ * @param <R> the command's return type
  */
 public interface CommandHandler<C extends Command<R>, R> {
     R handle(C command);
 
-    /** Bu handler'ın hangi komut sınıfını işlediğini bildirir (dispatcher eşlemesi için). */
+    /** Declares which command class this handler processes (used for dispatcher mapping). */
     Class<C> commandType();
 }

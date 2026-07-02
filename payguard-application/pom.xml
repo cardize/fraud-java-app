@@ -12,31 +12,31 @@
 
     <artifactId>payguard-application</artifactId>
     <name>PayGuard Application</name>
-    <description>CQRS handler'lar, port arayüzleri, iş akışı</description>
+    <description>CQRS handlers, port interfaces, business workflows</description>
 
     <dependencies>
-        <!-- Sadece domain'e bağımlı (içe doğru). Altyapı (JPA, web) BİLMEZ. -->
+        <!-- Depends only on domain (inward). Does NOT know about infrastructure (JPA, web). -->
         <dependency>
             <groupId>com.payguard</groupId>
             <artifactId>payguard-domain</artifactId>
         </dependency>
 
-        <!-- DI/anotasyonlar (@Service, @Component, @Async) -->
+        <!-- DI/annotations (@Service, @Component, @Async) -->
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
         </dependency>
-        <!-- @Transactional için -->
+        <!-- for @Transactional -->
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-tx</artifactId>
         </dependency>
-        <!-- Bean Validation anotasyonları (komut DTO'larında @NotBlank, @Positive...) -->
+        <!-- Bean Validation annotations (@NotBlank, @Positive... on command DTOs) -->
         <dependency>
             <groupId>jakarta.validation</groupId>
             <artifactId>jakarta.validation-api</artifactId>
         </dependency>
-        <!-- Metrik (MeterRegistry) — iş kararlarını saymak için -->
+        <!-- Metrics (MeterRegistry) — for counting business decisions -->
         <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-core</artifactId>

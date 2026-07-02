@@ -10,7 +10,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * Bir işlemin anomali olup olmadığını sorgulayan komut.
+ * Command that queries whether a transaction is anomalous.
  */
 public record CheckTransactionCommand(
         @NotNull UUID transactionId,

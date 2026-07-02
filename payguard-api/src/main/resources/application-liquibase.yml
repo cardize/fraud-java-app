@@ -1,6 +1,6 @@
-# 'liquibase' profili — Flyway yerine Liquibase ile migration:
+# 'liquibase' profile — migrations via Liquibase instead of Flyway:
 #   mvn -pl payguard-api -am spring-boot:run -Dspring-boot.run.profiles=liquibase
-# Aynı şemayı db/changelog/db.changelog-master.yaml üzerinden kurar.
+# Creates the same schema via db/changelog/db.changelog-master.yaml.
 
 spring:
   flyway:

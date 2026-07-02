@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <!-- Spring Boot BOM + plugin yönetimi -->
+    <!-- Spring Boot BOM + plugin management -->
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
@@ -17,9 +17,9 @@
     <version>0.1.0</version>
     <packaging>pom</packaging>
     <name>PayGuard Parent</name>
-    <description>Çok modüllü Maven yapısı — katman bazlı</description>
+    <description>Multi-module Maven build — layered</description>
 
-    <!-- Hangi alt modüller derlenecek -->
+    <!-- Which submodules get built -->
     <modules>
         <module>payguard-domain</module>
         <module>payguard-application</module>
@@ -34,10 +34,10 @@
         <spring-cloud.version>2023.0.3</spring-cloud.version>
     </properties>
 
-    <!-- İç modüllerin sürümlerini tek yerden yönet (her modülde version yazmamak için) -->
+    <!-- Manage internal module versions in one place (so modules don't repeat versions) -->
     <dependencyManagement>
         <dependencies>
-            <!-- Spring Cloud BOM (Gateway sürümleri Boot'tan ayrı yönetilir) -->
+            <!-- Spring Cloud BOM (Gateway versions are managed separately from Boot) -->
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-dependencies</artifactId>

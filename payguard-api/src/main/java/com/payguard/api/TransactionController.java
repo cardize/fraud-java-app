@@ -11,10 +11,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * İşlem (fraud) uç noktaları.
+ * Transaction (fraud) endpoints.
  *
- * Controller ince kalır: sadece Mediator'a delege eder.
- * İleride PF / PayCell / TrKart uç noktaları aynı şekilde eklenir.
+ * The controller stays thin: it only delegates to the Mediator.
+ * Future PF / PayCell / TrKart endpoints are added the same way.
  */
 @RestController
 @RequestMapping("/api/v1/transactions")

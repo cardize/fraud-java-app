@@ -1,13 +1,13 @@
-# 'multitenant' profili — DataSource tenant'a göre yönlendirilir (MultiTenantDataSourceConfig devreye girer).
+# 'multitenant' profile — the DataSource is routed by tenant (MultiTenantDataSourceConfig kicks in).
 #   mvn -pl payguard-api -am spring-boot:run -Dspring-boot.run.profiles=multitenant
-# İstekte tenant seçimi:  -H "X-Tenant: alpha"   (yoksa varsayılan DB)
+# Tenant selection per request:  -H "X-Tenant: alpha"   (default DB otherwise)
 #
-# Şema her tenant DB'sine MultiTenantFlywayMigrator ile ayrı ayrı uygulanır (@PostConstruct).
+# The schema is applied to each tenant DB separately by MultiTenantFlywayMigrator (@PostConstruct).
 
 spring:
   flyway:
-    # Boot'un tek-DataSource otomatik Flyway'i kapalı; migration'ı tenant başına biz koşuyoruz.
+    # Boot's single-DataSource automatic Flyway is off; we run migrations per tenant ourselves.
     enabled: false
   jpa:
     hibernate:
-      ddl-auto: none       # şema Flyway'in (per-tenant) sorumluluğunda
+      ddl-auto: none       # the schema is (per-tenant) Flyway's responsibility

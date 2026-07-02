@@ -5,10 +5,10 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
 /**
- * Kafka yayımcısı. payguard.outbox.publisher=kafka ile aktif.
+ * Kafka publisher. Active when payguard.outbox.publisher=kafka.
  *
- * KafkaTemplate Spring Boot tarafından otomatik konfigüre edilir (spring.kafka.bootstrap-servers).
- * Outbox + Kafka birlikte "transactional outbox -> en-az-bir-kez teslim" desenini tamamlar.
+ * KafkaTemplate is auto-configured by Spring Boot (spring.kafka.bootstrap-servers).
+ * Outbox + Kafka together complete the "transactional outbox -> at-least-once delivery" pattern.
  */
 @Component
 @ConditionalOnProperty(name = "payguard.outbox.publisher", havingValue = "kafka")

@@ -6,10 +6,11 @@ import java.util.Deque;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * Bir kartın çevrimiçi (online) istatistikleri: ortalama tutar, varyans, son işlem zamanları.
+ * A card's online statistics: mean amount, variance, recent transaction times.
  *
- * Ortalama/varyans Welford algoritmasıyla artımlı (tüm geçmişi saklamadan) hesaplanır.
- * Eşzamanlılık ReentrantLock ile sağlanır (sanal thread'leri pinlememek için synchronized yerine).
+ * Mean/variance are computed incrementally with Welford's algorithm (without storing the full
+ * history). Concurrency is guarded with a ReentrantLock (instead of synchronized, so virtual
+ * threads are never pinned).
  */
 public class CardStatistics {
 
@@ -17,7 +18,7 @@ public class CardStatistics {
 
     private long count;
     private double mean;
-    private double m2;                 // Welford: varyans birikimi
+    private double m2;                 // Welford: variance accumulator
     private final Deque<Instant> recentTimes = new ArrayDeque<>();
 
     public double mean() {
@@ -47,7 +48,7 @@ public class CardStatistics {
         }
     }
 
-    /** Son 1 saatteki işlem sayısı (frekans göstergesi). */
+    /** Number of transactions in the last hour (frequency indicator). */
     public long frequencyLastHour(Instant now) {
         lock.lock();
         try {
@@ -59,7 +60,7 @@ public class CardStatistics {
         }
     }
 
-    /** Yeni işlemi istatistiklere ekler (Welford güncellemesi). */
+    /** Adds a new transaction to the statistics (Welford update). */
     public void update(double amount, Instant when) {
         lock.lock();
         try {
@@ -69,7 +70,7 @@ public class CardStatistics {
             m2 += delta * (amount - mean);
 
             recentTimes.addLast(when);
-            // pencereyi sınırla (bellek): son 100 işlem
+            // bound the window (memory): last 100 transactions
             while (recentTimes.size() > 100) {
                 recentTimes.removeFirst();
             }

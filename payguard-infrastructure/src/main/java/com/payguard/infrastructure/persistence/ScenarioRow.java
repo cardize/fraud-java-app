@@ -17,9 +17,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Senaryo tablosu satırı (JPA entity / persistence modeli).
+ * Scenario table row (JPA entity / persistence model).
  *
- * Bir senaryonun BİRDEN ÇOK kuralı vardır → @OneToMany.
+ * A scenario has MULTIPLE rules -> @OneToMany.
  */
 @Entity
 @Table(name = "scenarios")
@@ -38,7 +38,7 @@ public class ScenarioRow {
     private int priority;
     private String fraudResponseCode;
 
-    // Senaryo silinince/eklenince kurallar da yönetilir (cascade). FK: scenario_id
+    // Rules are managed along with the scenario (cascade) on add/delete. FK: scenario_id
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
     @JoinColumn(name = "scenario_id")
     private List<RuleRow> rules = new ArrayList<>();
