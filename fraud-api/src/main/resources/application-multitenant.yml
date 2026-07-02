@@ -1,0 +1,13 @@
+# 'multitenant' profile — the DataSource is routed by tenant (MultiTenantDataSourceConfig kicks in).
+#   mvn -pl fraud-api -am spring-boot:run -Dspring-boot.run.profiles=multitenant
+# Tenant selection per request:  -H "X-Tenant: alpha"   (default DB otherwise)
+#
+# The schema is applied to each tenant DB separately by MultiTenantFlywayMigrator (@PostConstruct).
+
+spring:
+  flyway:
+    # Boot's single-DataSource automatic Flyway is off; we run migrations per tenant ourselves.
+    enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: none       # the schema is (per-tenant) Flyway's responsibility

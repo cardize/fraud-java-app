@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.fraud</groupId>
+        <artifactId>fraud-parent</artifactId>
+        <version>0.1.0</version>
+    </parent>
+
+    <artifactId>fraud-application</artifactId>
+    <name>Fraud Application</name>
+    <description>CQRS handlers, port interfaces, business workflows</description>
+
+    <dependencies>
+        <!-- Depends only on domain (inward). Does NOT know about infrastructure (JPA, web). -->
+        <dependency>
+            <groupId>com.fraud</groupId>
+            <artifactId>fraud-domain</artifactId>
+        </dependency>
+
+        <!-- DI/annotations (@Service, @Component, @Async) -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+        </dependency>
+        <!-- for @Transactional -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-tx</artifactId>
+        </dependency>
+        <!-- Bean Validation annotations (@NotBlank, @Positive... on command DTOs) -->
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+        </dependency>
+        <!-- Metrics (MeterRegistry) — for counting business decisions -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+        </dependency>
+    </dependencies>
+</project>

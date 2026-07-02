@@ -1,0 +1,117 @@
+# Liquibase master changelog — creates the SAME schema as Flyway V1__init.sql (alternative tool).
+# Active with the 'liquibase' profile: spring.liquibase.enabled=true, spring.flyway.enabled=false.
+
+databaseChangeLog:
+  - changeSet:
+      id: 1-create-transactions
+      author: fraud
+      changes:
+        - createTable:
+            tableName: transactions
+            columns:
+              - column: { name: id, type: UUID, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: message_id, type: BIGINT }
+              - column: { name: module, type: INT }
+              - column: { name: shadow_card_no, type: VARCHAR(64) }
+              - column: { name: amount, type: "DECIMAL(19,2)" }
+              - column: { name: merchant_id, type: VARCHAR(64) }
+              - column: { name: transaction_date, type: "TIMESTAMP WITH TIME ZONE" }
+              - column: { name: control_code, type: VARCHAR(20) }
+              - column: { name: fraud_response_code, type: VARCHAR(40) }
+              - column: { name: latest_request, type: BOOLEAN }
+        - createIndex:
+            indexName: idx_tx_message_module
+            tableName: transactions
+            columns:
+              - column: { name: message_id }
+              - column: { name: module }
+
+  - changeSet:
+      id: 2-create-scenarios
+      author: fraud
+      changes:
+        - createTable:
+            tableName: scenarios
+            columns:
+              - column: { name: id, type: BIGINT, autoIncrement: true, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: name, type: VARCHAR(200) }
+              - column: { name: product_type, type: VARCHAR(20) }
+              - column: { name: module, type: INT }
+              - column: { name: priority, type: INT }
+              - column: { name: fraud_response_code, type: VARCHAR(40) }
+        - createIndex:
+            indexName: idx_scn_type_module
+            tableName: scenarios
+            columns:
+              - column: { name: product_type }
+              - column: { name: module }
+
+  - changeSet:
+      id: 3-create-rules
+      author: fraud
+      changes:
+        - createTable:
+            tableName: rules
+            columns:
+              - column: { name: id, type: BIGINT, autoIncrement: true, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: name, type: VARCHAR(200) }
+              - column: { name: type, type: VARCHAR(20) }
+              - column: { name: expression, type: VARCHAR(1000) }
+              - column: { name: scenario_id, type: BIGINT }
+        - addForeignKeyConstraint:
+            constraintName: fk_rule_scenario
+            baseTableName: rules
+            baseColumnNames: scenario_id
+            referencedTableName: scenarios
+            referencedColumnNames: id
+
+  - changeSet:
+      id: 4-create-outbox
+      author: fraud
+      changes:
+        - createTable:
+            tableName: outbox_messages
+            columns:
+              - column: { name: id, type: BIGINT, autoIncrement: true, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: type, type: VARCHAR(60) }
+              - column: { name: transaction_id, type: UUID }
+              - column: { name: module, type: INT }
+              - column: { name: fraud_response_code, type: VARCHAR(40) }
+              - column: { name: tenant, type: VARCHAR(60) }
+              - column: { name: status, type: VARCHAR(20) }
+              - column: { name: created_at, type: "TIMESTAMP WITH TIME ZONE", constraints: { nullable: false } }
+              - column: { name: processed_at, type: "TIMESTAMP WITH TIME ZONE" }
+        - createIndex:
+            indexName: idx_outbox_status_created
+            tableName: outbox_messages
+            columns:
+              - column: { name: status }
+              - column: { name: created_at }
+
+  - changeSet:
+      id: 5-outbox-processed-index
+      author: fraud
+      changes:
+        # For the cleanup query (which filters on status + processed_at); mirrors Flyway V2.
+        - createIndex:
+            indexName: idx_outbox_status_processed
+            tableName: outbox_messages
+            columns:
+              - column: { name: status }
+              - column: { name: processed_at }
+
+  - changeSet:
+      id: 6-message-claims
+      author: fraud
+      changes:
+        # Atomic message-claim table (race-free duplicate detection); mirrors Flyway V3.
+        - createTable:
+            tableName: message_claims
+            columns:
+              - column: { name: id, type: BIGINT, autoIncrement: true, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: message_id, type: BIGINT, constraints: { nullable: false } }
+              - column: { name: module, type: INT, constraints: { nullable: false } }
+        - addUniqueConstraint:
+            constraintName: uq_message_claim
+            tableName: message_claims
+            columnNames: message_id, module

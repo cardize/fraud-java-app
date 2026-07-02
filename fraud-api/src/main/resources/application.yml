@@ -1,0 +1,126 @@
+# Fraud — application configuration
+
+spring:
+  application:
+    name: fraud
+
+  # Java 21 virtual threads — high concurrency at low memory for blocking request/IO work.
+  threads:
+    virtual:
+      enabled: true
+
+  # H2 in-memory database (for development/running locally).
+  # Production switches to PostgreSQL: org.postgresql:postgresql + url jdbc:postgresql://...
+  datasource:
+    url: jdbc:h2:mem:fraud;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+    # Virtual threads (above) allow a very high number of concurrent requests; the DB pool must
+    # stay INDEPENDENT of that and bounded — otherwise the DB drowns under its few real
+    # connections. When the pool is exhausted, a request fails fast in 3 seconds
+    # (connection-timeout) instead of waiting forever.
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 3000
+      max-lifetime: 1800000
+
+  jpa:
+    hibernate:
+      # The schema is now FLYWAY's responsibility (db/migration/V*.sql). Hibernate only consumes it.
+      # Tip: switching to 'validate' once verified checks entity-schema consistency after builds.
+      ddl-auto: none
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  # Flyway: applies the V*.sql files under classpath:db/migration in order.
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+  # Liquibase is OFF by default (so it doesn't clash with Flyway). Enabled by the 'liquibase' profile.
+  liquibase:
+    enabled: false
+
+  h2:
+    console:
+      enabled: true         # inspect the DB at http://localhost:8080/h2-console
+
+  # Cache provider. Default: Caffeine (bounded size + TTL) — works without installing Redis.
+  # For Redis: start the app with the 'redis' profile (--spring.profiles.active=redis), see application-redis.yml
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=1000,expireAfterWrite=10m
+
+  # Graceful shutdown: no new requests are accepted, in-flight ones complete (deploy safety).
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+
+server:
+  port: 8080
+  shutdown: graceful
+  # Gzip compression for JSON responses — reduces bandwidth and latency on growing
+  # report/scenario-list endpoints. Responses under 1KB aren't compressed (the compression
+  # overhead would exceed the gain).
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/plain
+    min-response-size: 1024
+
+# Scenario engine settings
+fraud:
+  scenario:
+    parallel: true
+    max-parallelism: 10
+  persistence:
+    # Adapter selection for transaction writes: jpa (default) | jdbc (raw-SQL hot path)
+    transaction-store: jpa
+  ai:
+    # Anomaly detection on/off
+    enabled: true
+  security:
+    # Secret key of at least 256 bits (32+ characters) for HMAC-SHA256.
+    # Overridden in production via the FRAUD_JWT_SECRET env variable; the embedded value is dev-only.
+    jwt-secret: "${FRAUD_JWT_SECRET:fraud-dev-secret-key-change-me-please-32+chars}"
+    jwt-expiration-ms: "${FRAUD_JWT_EXPIRATION_MS:3600000}"   # 1 hour
+    demo-password: "${FRAUD_DEMO_PASSWORD:fraud123}"
+    login-rate-limit:
+      capacity: 5          # attempts allowed per IP within the window
+      window-seconds: 60
+  outbox:
+    poll-interval-ms: 5000
+    cleanup-interval-ms: 86400000   # 24 hours — PROCESSED record cleanup
+    retention-days: 7               # PROCESSED records older than 7 days are deleted
+    destination: "fraud.offline-operations"
+    # Publisher: logging (default, no broker) | kafka | rabbit
+    publisher: logging
+
+# Actuator: health/metrics endpoints.
+#
+# SECURITY/OPS: Management endpoints are served on a SEPARATE port (9090) — a Spring Boot
+# behavior independent of the public API's (8080) JWT security chain. Without this, a Prometheus
+# scraper (which cannot perform an interactive JWT login) could never reach
+# /actuator/prometheus — metrics collection would silently not work. Standard practice: 9090 is
+# only open at the network/firewall level (VPC, in-cluster) and closed to the outside; it needs
+# no JWT because it should be unreachable from outside anyway.
+management:
+  server:
+    port: "${FRAUD_MANAGEMENT_PORT:9090}"
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when_authorized
+  health:
+    # Brokers are optional; /actuator/health shouldn't go DOWN while they're not running
+    rabbit:
+      enabled: false
+
+logging:
+  level:
+    com.fraud: INFO

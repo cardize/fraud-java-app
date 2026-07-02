@@ -1,0 +1,10 @@
+# 'liquibase' profile — migrations via Liquibase instead of Flyway:
+#   mvn -pl fraud-api -am spring-boot:run -Dspring-boot.run.profiles=liquibase
+# Creates the same schema via db/changelog/db.changelog-master.yaml.
+
+spring:
+  flyway:
+    enabled: false
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.yaml

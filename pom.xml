@@ -12,20 +12,20 @@
         <relativePath/>
     </parent>
 
-    <groupId>com.payguard</groupId>
-    <artifactId>payguard-parent</artifactId>
+    <groupId>com.fraud</groupId>
+    <artifactId>fraud-parent</artifactId>
     <version>0.1.0</version>
     <packaging>pom</packaging>
-    <name>PayGuard Parent</name>
+    <name>Fraud Parent</name>
     <description>Multi-module Maven build — layered</description>
 
     <!-- Which submodules get built -->
     <modules>
-        <module>payguard-domain</module>
-        <module>payguard-application</module>
-        <module>payguard-infrastructure</module>
-        <module>payguard-api</module>
-        <module>payguard-gateway</module>
+        <module>fraud-domain</module>
+        <module>fraud-application</module>
+        <module>fraud-infrastructure</module>
+        <module>fraud-api</module>
+        <module>fraud-gateway</module>
     </modules>
 
     <properties>
@@ -46,18 +46,18 @@
                 <scope>import</scope>
             </dependency>
             <dependency>
-                <groupId>com.payguard</groupId>
-                <artifactId>payguard-domain</artifactId>
+                <groupId>com.fraud</groupId>
+                <artifactId>fraud-domain</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.payguard</groupId>
-                <artifactId>payguard-application</artifactId>
+                <groupId>com.fraud</groupId>
+                <artifactId>fraud-application</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.payguard</groupId>
-                <artifactId>payguard-infrastructure</artifactId>
+                <groupId>com.fraud</groupId>
+                <artifactId>fraud-infrastructure</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>

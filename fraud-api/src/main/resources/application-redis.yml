@@ -1,0 +1,12 @@
+# 'redis' profile — activate while Redis is running:
+#   mvn -pl fraud-api -am spring-boot:run -Dspring-boot.run.profiles=redis
+
+spring:
+  cache:
+    type: redis
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  cache.redis:
+    time-to-live: 120000     # 2 min

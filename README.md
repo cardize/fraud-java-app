@@ -1,4 +1,4 @@
-# PayGuard
+# Fraud
 
 A multi-module **fraud detection platform** written in Java 21 + Spring Boot.
 It evaluates incoming transactions with a rule/scenario engine and statistical anomaly detection;
@@ -12,18 +12,18 @@ Maven rejects an import in the wrong direction at compile time — the architect
 enforced by the build.
 
 ```
-payguard-parent (pom)
-├─ payguard-domain          → Entities, aggregates, enums (core business model)
+fraud-parent (pom)
+├─ fraud-domain          → Entities, aggregates, enums (core business model)
 │      dependencies: none (only jakarta.persistence-api)  ·  knows NOTHING about Spring
-├─ payguard-application     → CQRS (Command/Handler/Mediator), FraudParameters,
+├─ fraud-application     → CQRS (Command/Handler/Mediator), FraudParameters,
 │                             ScenarioService, anomaly, PORT interfaces
 │      dependencies: domain + spring-context/tx
-├─ payguard-infrastructure  → JPA adapters, RuleEvaluator (SpEL), scenario processors,
+├─ fraud-infrastructure  → JPA adapters, RuleEvaluator (SpEL), scenario processors,
 │                             outbox, cache, multi-tenancy, message publishers
 │      dependencies: application + spring-boot-starter-data-jpa
-├─ payguard-api             → Controllers + security + bootstrap (runnable jar)
+├─ fraud-api             → Controllers + security + bootstrap (runnable jar)
 │      dependencies: infrastructure + web + security + actuator
-└─ payguard-gateway         → API Gateway / reverse proxy (8090, separate application)
+└─ fraud-gateway         → API Gateway / reverse proxy (8090, separate application)
        dependencies: spring-cloud-starter-gateway (reactive)
 ```
 
@@ -73,19 +73,19 @@ POST /api/v1/transactions/get-fraud-response-for-card
 mvn clean install
 
 # 1) Start the API (8080)
-mvn -pl payguard-api -am spring-boot:run
+mvn -pl fraud-api -am spring-boot:run
 
 # 2) (optional) Start the gateway (8090 → 8080 proxy)
-mvn -pl payguard-gateway -am spring-boot:run
+mvn -pl fraud-gateway -am spring-boot:run
 ```
 
 ### Example request (JWT-protected)
 
 ```bash
-# 1) Get a token (demo password: payguard123)
+# 1) Get a token (demo password: fraud123)
 TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"payguard123"}' | sed -E 's/.*"token":"([^"]+)".*/\1/')
+  -d '{"username":"admin","password":"fraud123"}' | sed -E 's/.*"token":"([^"]+)".*/\1/')
 
 # 2) Fraud check — a high amount (>5000) triggers the REJECT scenario
 curl -X POST http://localhost:8080/api/v1/transactions/get-fraud-response-for-card \
@@ -108,7 +108,7 @@ curl -X POST http://localhost:8080/api/v1/auth/logout -H "Authorization: Bearer 
 ```
 
 - **Swagger UI:** http://localhost:8080/swagger-ui.html
-- **H2 console:** http://localhost:8080/h2-console (JDBC URL: `jdbc:h2:mem:payguard`)
+- **H2 console:** http://localhost:8080/h2-console (JDBC URL: `jdbc:h2:mem:fraud`)
 - **Health/Prometheus:** http://localhost:9090/actuator/health · http://localhost:9090/actuator/prometheus
   (separate management port — needs no JWT; in production it is closed off purely at the
   network/firewall level. The gateway's own actuator is on 9091.)
@@ -122,17 +122,17 @@ mvn -Dtest=ContainersFraudFlowTest test    # Postgres+Kafka (requires Docker)
 ## Configuration keys (application.yml)
 | Key | Values | Effect |
 |---|---|---|
-| `payguard.persistence.transaction-store` | `jpa` (default) / `jdbc` | Transaction writes: ORM or raw SQL |
-| `payguard.ai.enabled` | `true` (default) / `false` | Anomaly detection on/off |
-| `payguard.outbox.publisher` | `logging` (default) / `kafka` / `rabbit` | Outbox publish target |
-| `payguard.outbox.retention-days` | int (default 7) | Retention of PROCESSED outbox records |
-| `PAYGUARD_ALLOWED_ORIGINS` (gateway) | comma-separated origins | CORS allowed origins (default: localhost only) |
-| `PAYGUARD_MANAGEMENT_PORT` (default 9090) / `PAYGUARD_GATEWAY_MANAGEMENT_PORT` (default 9091) | port | Actuator's separate, JWT-free management port |
+| `fraud.persistence.transaction-store` | `jpa` (default) / `jdbc` | Transaction writes: ORM or raw SQL |
+| `fraud.ai.enabled` | `true` (default) / `false` | Anomaly detection on/off |
+| `fraud.outbox.publisher` | `logging` (default) / `kafka` / `rabbit` | Outbox publish target |
+| `fraud.outbox.retention-days` | int (default 7) | Retention of PROCESSED outbox records |
+| `FRAUD_ALLOWED_ORIGINS` (gateway) | comma-separated origins | CORS allowed origins (default: localhost only) |
+| `FRAUD_MANAGEMENT_PORT` (default 9090) / `FRAUD_GATEWAY_MANAGEMENT_PORT` (default 9091) | port | Actuator's separate, JWT-free management port |
 | `server.compression.enabled` | `true` (default) | Gzip for JSON/XML/HTML responses (>1KB) |
 | `spring.cache.type` | `caffeine` (default) / `redis` | Cache provider (bounded size + TTL) |
-| `payguard.scenario.parallel` / `max-parallelism` | bool / int | Parallel scenario execution |
-| `payguard.security.jwt-secret` / `demo-password` | string | JWT key / demo login password |
-| `payguard.security.login-rate-limit.capacity` / `window-seconds` | int (default 5/60) | Login brute-force limit (per IP) |
+| `fraud.scenario.parallel` / `max-parallelism` | bool / int | Parallel scenario execution |
+| `fraud.security.jwt-secret` / `demo-password` | string | JWT key / demo login password |
+| `fraud.security.login-rate-limit.capacity` / `window-seconds` | int (default 5/60) | Login brute-force limit (per IP) |
 | profile `multitenant` | on/off | Per-tenant DB + per-tenant Flyway (`X-Tenant` header) |
 | profile `liquibase` | on/off | Migration tool: Liquibase instead of Flyway (default) |
 | profile `redis` | on/off | Switches the cache provider to Redis |
@@ -140,12 +140,12 @@ mvn -Dtest=ContainersFraudFlowTest test    # Postgres+Kafka (requires Docker)
 > Notes:
 > - With H2, `flyway-core` is enough; for Postgres, `flyway-database-postgresql` is added (test scope here).
 > - Kafka/Rabbit only connect to a broker when `publisher` is set to that value; the default `logging` works offline.
-> - Multi-tenant run: `mvn -pl payguard-api -am spring-boot:run -Dspring-boot.run.profiles=multitenant`,
+> - Multi-tenant run: `mvn -pl fraud-api -am spring-boot:run -Dspring-boot.run.profiles=multitenant`,
 >   with `-H "X-Tenant: alpha"` on requests.
 
 ## Module & Package Map
 ```
-com.payguard
+com.fraud
 ├─ api/                 → Controllers, security/, tenant/, config/ (OpenAPI), exception handler
 ├─ application/
 │   ├─ cqrs/            → Command, CommandHandler, Mediator
