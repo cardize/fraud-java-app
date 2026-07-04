@@ -29,9 +29,13 @@ class FraudFlowIntegrationTest {
     private ObjectMapper objectMapper;
 
     private String login() throws Exception {
+        return login("admin", "fraud123");
+    }
+
+    private String login(String username, String password) throws Exception {
         MvcResult result = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"username\":\"admin\",\"password\":\"fraud123\"}"))
+                        .content("{\"username\":\"" + username + "\",\"password\":\"" + password + "\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andReturn();
@@ -43,6 +47,34 @@ class FraudFlowIntegrationTest {
     void loginWithValidCredentialsReturnsToken() throws Exception {
         String token = login();
         org.junit.jupiter.api.Assertions.assertFalse(token.isBlank());
+    }
+
+    @Test
+    void loginWithWrongPasswordFails() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"username\":\"admin\",\"password\":\"wrong\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(false));
+    }
+
+    // RBAC: cache management requires the ADMIN role (SecurityConfig).
+    @Test
+    void adminCanEvictScenarioCache() throws Exception {
+        String token = login(); // admin has roles ADMIN,USER
+        mockMvc.perform(post("/api/v1/cache/evict-scenarios")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    // RBAC: the analyst user only has USER — the same endpoint must be forbidden.
+    @Test
+    void analystWithoutAdminRoleCannotEvictScenarioCache() throws Exception {
+        String token = login("analyst", "analyst123");
+        mockMvc.perform(post("/api/v1/cache/evict-scenarios")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isForbidden());
     }
 
     @Test

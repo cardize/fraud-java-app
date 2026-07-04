@@ -6,12 +6,13 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * Filter that validates the Bearer token on every request and puts the identity into the
@@ -35,8 +36,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (header != null && header.startsWith("Bearer ")) {
             Claims claims = jwtService.validate(header.substring(7));
             if (claims != null && !blacklist.isRevoked(claims.getId())) {
-                var auth = new UsernamePasswordAuthenticationToken(
-                        claims.getSubject(), null, AuthorityUtils.createAuthorityList("ROLE_USER"));
+                // RBAC: authorities come from the token's "roles" claim (set at login from the
+                // user store). Older/foreign tokens without the claim get no authorities.
+                List<?> roles = claims.get("roles", List.class);
+                List<SimpleGrantedAuthority> authorities = roles == null ? List.of()
+                        : roles.stream().map(r -> new SimpleGrantedAuthority("ROLE_" + r)).toList();
+                var auth = new UsernamePasswordAuthenticationToken(claims.getSubject(), null, authorities);
                 SecurityContextHolder.getContext().setAuthentication(auth);
             }
         }

@@ -36,4 +36,7 @@ public interface OutboxJpaRepository extends JpaRepository<OutboxMessage, Long> 
     @Query("delete from OutboxMessage m where m.status = com.fraud.infrastructure.outbox.OutboxStatus.PROCESSED " +
            "and m.processedAt < :cutoff")
     int deleteProcessedBefore(Instant cutoff);
+
+    /** Backlog size for the fraud.outbox.pending gauge (cheap: covered by the status+created_at index). */
+    long countByStatus(OutboxStatus status);
 }

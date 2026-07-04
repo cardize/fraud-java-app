@@ -7,6 +7,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
+import java.time.Instant;
+
 /**
  * Atomic message-claim row: used for race-free duplicate detection.
  *
@@ -25,11 +27,15 @@ public class MessageClaim {
     private long messageId;
     private int module;
 
+    /** When the claim was made — the retention job (DataRetentionJob) deletes by this. */
+    private Instant claimedAt;
+
     protected MessageClaim() {
     }
 
     public MessageClaim(long messageId, int module) {
         this.messageId = messageId;
         this.module = module;
+        this.claimedAt = Instant.now();
     }
 }

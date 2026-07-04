@@ -1,6 +1,8 @@
 package com.fraud.infrastructure.outbox;
 
 import com.fraud.infrastructure.outbox.publisher.MessagePublisher;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Outbox relay: periodically processes and publishes PENDING messages (marking them PROCESSED).
@@ -31,14 +34,24 @@ public class OutboxRelay {
     private final String destination;
     private final int retentionDays;
 
+    // Observability: backlog gauge + publish outcome counters. A growing fraud.outbox.pending is
+    // the earliest signal that the broker is down or the relay can't keep up — alert on it.
+    private final AtomicLong pendingGauge;
+    private final Counter publishedOk;
+    private final Counter publishedError;
+
     public OutboxRelay(OutboxJpaRepository repository,
                        MessagePublisher messagePublisher,
+                       MeterRegistry meterRegistry,
                        @Value("${fraud.outbox.destination:fraud.offline-operations}") String destination,
                        @Value("${fraud.outbox.retention-days:7}") int retentionDays) {
         this.repository = repository;
         this.messagePublisher = messagePublisher;
         this.destination = destination;
         this.retentionDays = retentionDays;
+        this.pendingGauge = meterRegistry.gauge("fraud.outbox.pending", new AtomicLong());
+        this.publishedOk = meterRegistry.counter("fraud.outbox.published", "result", "ok");
+        this.publishedError = meterRegistry.counter("fraud.outbox.published", "result", "error");
     }
 
     @Scheduled(fixedDelayString = "${fraud.outbox.poll-interval-ms:5000}")
@@ -47,6 +60,7 @@ public class OutboxRelay {
         List<OutboxMessage> batch =
                 repository.findByStatusOrderByCreatedAtAsc(OutboxStatus.PENDING, Limit.of(BATCH_SIZE));
         if (batch.isEmpty()) {
+            pendingGauge.set(0);
             return;
         }
         // Per-message isolation: if one fails the others still get processed; the failed one
@@ -57,7 +71,9 @@ public class OutboxRelay {
                 publish(msg);
                 msg.markProcessed(Instant.now());
                 processed.add(msg);
+                publishedOk.increment();
             } catch (Exception e) {
+                publishedError.increment();
                 log.error("Failed to publish outbox message (id={}), will retry on the next tick", msg.getId(), e);
             }
         }
@@ -65,6 +81,7 @@ public class OutboxRelay {
             repository.saveAll(processed);
             log.info("Outbox: processed {}/{} messages", processed.size(), batch.size());
         }
+        pendingGauge.set(repository.countByStatus(OutboxStatus.PENDING));
     }
 
     /**

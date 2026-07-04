@@ -40,7 +40,7 @@ implementation (adapter) lives in infrastructure:
 
 ## Tech Stack
 - **Java 21**, **Spring Boot 3.3**, **Maven** (multi-module)
-- **Spring Web** (REST), **Spring Security + JWT** (jjwt), **springdoc-openapi** (Swagger UI)
+- **Spring Web** (REST), **Spring Security + JWT** (jjwt; RBAC via a `roles` claim, BCrypt user store), **springdoc-openapi** (Swagger UI)
 - **Bucket4j** (login rate limiting), HSTS/clickjacking/referrer-policy headers
 - **Spring Data JPA / Hibernate**, **JdbcTemplate** (hot path)
 - **SpEL** (rule evaluation), **Spring Cache** (Redis optional)
@@ -82,7 +82,8 @@ mvn -pl fraud-gateway -am spring-boot:run
 ### Example request (JWT-protected)
 
 ```bash
-# 1) Get a token (demo password: fraud123)
+# 1) Get a token. Seeded users (dev defaults): admin/fraud123 (roles ADMIN,USER),
+#    analyst/analyst123 (USER). Override via FRAUD_ADMIN_PASSWORD / FRAUD_ANALYST_PASSWORD.
 TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username":"admin","password":"fraud123"}' | sed -E 's/.*"token":"([^"]+)".*/\1/')
@@ -100,7 +101,7 @@ curl -X POST http://localhost:8080/api/v1/ai/check-transaction \
   -d '{"transactionId":"11111111-1111-1111-1111-111111111111","shadowCardNo":"CARD123",
        "amount":50000,"merchantId":"M1","transactionDate":"2026-01-01T03:00:00Z"}'
 
-# Clear the scenario cache
+# Clear the scenario cache (requires the ADMIN role — the analyst user gets 403)
 curl -X POST http://localhost:8080/api/v1/cache/evict-scenarios -H "Authorization: Bearer $TOKEN"
 
 # Logout (blacklists the token; it is rejected from then on)
@@ -131,13 +132,18 @@ mvn -Dtest=ContainersFraudFlowTest test    # Postgres+Kafka (requires Docker)
 | `server.compression.enabled` | `true` (default) | Gzip for JSON/XML/HTML responses (>1KB) |
 | `spring.cache.type` | `caffeine` (default) / `redis` | Cache provider (bounded size + TTL) |
 | `fraud.scenario.parallel` / `max-parallelism` | bool / int | Parallel scenario execution |
-| `fraud.security.jwt-secret` / `demo-password` | string | JWT key / demo login password |
+| `fraud.security.jwt-secret` | string | JWT signing key (env: `FRAUD_JWT_SECRET`) |
+| `FRAUD_ADMIN_PASSWORD` / `FRAUD_ANALYST_PASSWORD` | string | Seeded users' passwords (dev defaults: `fraud123` / `analyst123`) |
 | `fraud.security.login-rate-limit.capacity` / `window-seconds` | int (default 5/60) | Login brute-force limit (per IP) |
+| `fraud.retention.transactions-days` / `message-claims-days` | int (default 90/30) | Retention for transactions / dedup claims (daily `DataRetentionJob`) |
 | profile `multitenant` | on/off | Per-tenant DB + per-tenant Flyway (`X-Tenant` header) |
 | profile `liquibase` | on/off | Migration tool: Liquibase instead of Flyway (default) |
 | profile `redis` | on/off | Switches the cache provider to Redis |
 
 > Notes:
+> - **RBAC:** the JWT carries a `roles` claim (from the `users` table); `/api/v1/cache/**` requires `ROLE_ADMIN`.
+> - **Correlation id:** every response carries `X-Correlation-Id` (generated when absent) and every log line prints it (`[cid:...]`) — one request's logs can be traced end-to-end.
+> - **Business metrics:** `fraud.decisions{code}`, `fraud.auth.login{result}`, `fraud.scenario.duration{productType}`, `fraud.outbox.pending`, `fraud.outbox.published{result}` — all on `/actuator/prometheus` (port 9090).
 > - With H2, `flyway-core` is enough; for Postgres, `flyway-database-postgresql` is added (test scope here).
 > - Kafka/Rabbit only connect to a broker when `publisher` is set to that value; the default `logging` works offline.
 > - Multi-tenant run: `mvn -pl fraud-api -am spring-boot:run -Dspring-boot.run.profiles=multitenant`,
@@ -157,7 +163,8 @@ com.fraud
 │   └─ common/          → ApiResult
 ├─ domain/              → rule/ (Rule, Scenario, RuleType), transaction/, shared/
 └─ infrastructure/
-    ├─ persistence/     → JPA repos + adapters, entity rows, seeder, message claims
+    ├─ persistence/     → JPA repos + adapters, entity rows, seeder, message claims, user accounts
+    ├─ maintenance/     → DataRetentionJob (transactions + message-claims retention)
     ├─ rules/           → RuleEvaluator (SpEL), Base/Card/... ScenarioProcessor, ScenarioCatalog
     ├─ outbox/          → OutboxMessage, OutboxRelay, publisher/ (logging/kafka/rabbit)
     ├─ tenant/          → TenantContext, RoutingDataSource, multi-tenant config + migrator

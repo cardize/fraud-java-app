@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.util.UUID;
 
 /**
@@ -23,4 +24,13 @@ public interface TransactionJpaRepository extends JpaRepository<Transaction, UUI
     void markPreviousAsNotLatest(@Param("messageId") long messageId,
                                  @Param("module") int module,
                                  @Param("currentId") UUID currentId);
+
+    /**
+     * Bulk-deletes transactions older than the cutoff (retention, see DataRetentionJob).
+     * Runs as a single DELETE in the DB — no entities are loaded; backed by the
+     * transaction_date index (V5).
+     */
+    @Modifying
+    @Query("delete from Transaction t where t.transactionDate < :cutoff")
+    int deleteByTransactionDateBefore(@Param("cutoff") Instant cutoff);
 }

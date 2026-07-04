@@ -86,7 +86,12 @@ fraud:
     # Overridden in production via the FRAUD_JWT_SECRET env variable; the embedded value is dev-only.
     jwt-secret: "${FRAUD_JWT_SECRET:fraud-dev-secret-key-change-me-please-32+chars}"
     jwt-expiration-ms: "${FRAUD_JWT_EXPIRATION_MS:3600000}"   # 1 hour
-    demo-password: "${FRAUD_DEMO_PASSWORD:fraud123}"
+    # Seed users (created at startup only if the users table is empty; see UserSeeder).
+    # admin -> roles ADMIN,USER · analyst -> USER. The embedded defaults are DEV-ONLY;
+    # production MUST override them via the env variables.
+    seed-users:
+      admin-password: "${FRAUD_ADMIN_PASSWORD:fraud123}"
+      analyst-password: "${FRAUD_ANALYST_PASSWORD:analyst123}"
     login-rate-limit:
       capacity: 5          # attempts allowed per IP within the window
       window-seconds: 60
@@ -97,6 +102,14 @@ fraud:
     destination: "fraud.offline-operations"
     # Publisher: logging (default, no broker) | kafka | rabbit
     publisher: logging
+  # Data retention (DataRetentionJob, daily). transactions and message_claims grow with every
+  # request; without retention both are unbounded. NOTE: the claims retention must stay LONGER
+  # than any realistic upstream retry window — deleting a claim re-opens duplicate detection
+  # for that message id.
+  retention:
+    cleanup-interval-ms: 86400000   # 24 hours
+    transactions-days: 90
+    message-claims-days: 30
 
 # Actuator: health/metrics endpoints.
 #
@@ -122,5 +135,10 @@ management:
       enabled: false
 
 logging:
+  # The correlation id (X-Correlation-Id header, generated when absent) is put into the MDC by
+  # CorrelationIdFilter; printing it on every line lets one request's logs be grepped out of
+  # concurrent traffic end-to-end.
+  pattern:
+    level: "%5p [cid:%X{correlationId:-}]"
   level:
     com.fraud: INFO
