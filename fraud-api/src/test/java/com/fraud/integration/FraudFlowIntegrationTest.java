@@ -77,6 +77,68 @@ class FraudFlowIntegrationTest {
                 .andExpect(status().isForbidden());
     }
 
+    // Scenario management: an admin-created scenario must affect decisions IMMEDIATELY
+    // (write-time SpEL validation passes, the scenario cache is evicted on create).
+    @Test
+    void adminCreatedScenarioAffectsNextDecision() throws Exception {
+        String token = login();
+        mockMvc.perform(post("/api/v1/scenarios")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Blocked Merchant\",\"productType\":\"CARD\",\"module\":1,"
+                                + "\"priority\":0,\"fraudResponseCode\":\"REVIEW\",\"rules\":["
+                                + "{\"name\":\"blocked merchant\",\"expression\":\"merchantId == 'BLOCKME'\"}]}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.id").isNumber());
+
+        // small amount, but the new scenario matches the merchant -> REVIEW
+        mockMvc.perform(post("/api/v1/transactions/get-fraud-response-for-card")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"module\":1,\"transactionMessageId\":9001,\"shadowCardNo\":\"SCNCARD\","
+                                + "\"amount\":10,\"merchantId\":\"BLOCKME\",\"transactionDate\":\"2026-01-01T12:00:00Z\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.fraudResponseCode").value("REVIEW"));
+    }
+
+    @Test
+    void scenarioWithUnsafeExpressionIsRejected() throws Exception {
+        String token = login();
+        // A type-reference/method-call expression (injection shape) must be rejected at write time.
+        mockMvc.perform(post("/api/v1/scenarios")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Evil\",\"productType\":\"CARD\",\"module\":1,"
+                                + "\"priority\":0,\"fraudResponseCode\":\"REJECT\",\"rules\":["
+                                + "{\"name\":\"rce\",\"expression\":\"T(java.lang.Runtime).getRuntime().exec('x') != null\"}]}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(false));
+    }
+
+    @Test
+    void analystCannotCreateScenario() throws Exception {
+        String token = login("analyst", "analyst123");
+        mockMvc.perform(post("/api/v1/scenarios")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"X\",\"productType\":\"CARD\",\"module\":1,"
+                                + "\"priority\":0,\"fraudResponseCode\":\"REJECT\",\"rules\":["
+                                + "{\"name\":\"r\",\"expression\":\"amountValue > 1\"}]}"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void anyAuthenticatedUserCanListScenarios() throws Exception {
+        String token = login("analyst", "analyst123");
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .get("/api/v1/scenarios")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data").isArray());
+    }
+
     @Test
     void fraudWithoutTokenReturns4xx() throws Exception {
         mockMvc.perform(post("/api/v1/transactions/get-fraud-response-for-card")

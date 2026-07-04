@@ -35,11 +35,16 @@ public class StatisticalAnomalyDetector implements AnomalyDetector {
 
     @Override
     public AnomalyResult check(FraudTransaction tx) {
-        CardStatistics stats = statisticsStore.getOrCreate(tx.shadowCardNo());
+        // ATOMICITY FIX: snapshot + update happen in ONE critical section (see
+        // CardStatistics.snapshotAndUpdate). The old flow read mean/stdDev/count/frequency as
+        // separate locked calls and updated at the end — under concurrency for the same card the
+        // score could mix values from different states. All score inputs below come from one
+        // consistent snapshot taken BEFORE this transaction was folded in.
+        CardStatistics.Snapshot stats = statisticsStore.getOrCreate(tx.shadowCardNo())
+                .snapshotAndUpdate(tx.amount(), tx.transactionDate());
 
         // Be cautious while the model hasn't "learned" yet (not enough history)
         if (stats.count() < 5) {
-            stats.update(tx.amount(), tx.transactionDate());
             return new AnomalyResult(true, 1.0, "Insufficient history — treated as suspicious as a precaution");
         }
 
@@ -48,7 +53,7 @@ public class StatisticalAnomalyDetector implements AnomalyDetector {
         double std = stats.stdDev();
 
         double zScore = std > 0 ? Math.min(1.0, Math.abs(tx.amount() - mean) / (3 * std)) : 0.0;
-        double frequencyScore = Math.min(1.0, stats.frequencyLastHour(tx.transactionDate()) / 10.0);
+        double frequencyScore = Math.min(1.0, stats.frequencyLastHour() / 10.0);
         double timeScore = (hourOfDay >= 0 && hourOfDay < 6) ? 1.0 : 0.0;
         double modelScore = 0.0; // <-- DJL/ONNX model output goes here
 
@@ -58,13 +63,12 @@ public class StatisticalAnomalyDetector implements AnomalyDetector {
         boolean anomaly = finalScore > SCORE_THRESHOLD
                 || (mean > 0 && tx.amount() > mean * 3)
                 || (hourOfDay < 6 && tx.amount() > mean * 2)
-                || stats.frequencyLastHour(tx.transactionDate()) > 10;
+                || stats.frequencyLastHour() > 10;
 
         String reason = String.format(
                 "z=%.2f freq=%.2f time=%.2f -> score=%.2f (mean=%.1f, std=%.1f)",
                 zScore, frequencyScore, timeScore, finalScore, mean, std);
 
-        stats.update(tx.amount(), tx.transactionDate());
         log.info("Anomaly check [{}]: anomaly={} {}", tx.shadowCardNo(), anomaly, reason);
 
         return new AnomalyResult(anomaly, finalScore, reason);

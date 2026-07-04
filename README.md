@@ -37,6 +37,8 @@ implementation (adapter) lives in infrastructure:
 | `ScenarioProcessor` | `Card/Pf/PayCell/TrKart ScenarioProcessor` |
 | `OfflineOperationPublisher` | `OutboxOfflineOperationPublisher` |
 | `AnomalyDetector` | `StatisticalAnomalyDetector` / `NoOpAnomalyDetector` |
+| `ScenarioAdminStore` | `JpaScenarioAdminStore` (evicts the scenario cache on every mutation) |
+| `ExpressionValidator` | `SpelExpressionValidator` (write-time safe-SpEL validation) |
 
 ## Tech Stack
 - **Java 21**, **Spring Boot 3.3**, **Maven** (multi-module)
@@ -101,6 +103,16 @@ curl -X POST http://localhost:8080/api/v1/ai/check-transaction \
   -d '{"transactionId":"11111111-1111-1111-1111-111111111111","shadowCardNo":"CARD123",
        "amount":50000,"merchantId":"M1","transactionDate":"2026-01-01T03:00:00Z"}'
 
+# Scenario management (GET: any authenticated user; POST/DELETE: ADMIN role).
+# Expressions are validated at write time (safe SpEL only) and the scenario cache is evicted on
+# every mutation — the change affects the very next transaction.
+curl http://localhost:8080/api/v1/scenarios -H "Authorization: Bearer $TOKEN"
+curl -X POST http://localhost:8080/api/v1/scenarios \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"name":"Blocked Merchant","productType":"CARD","module":1,"priority":0,
+       "fraudResponseCode":"REVIEW","rules":[{"name":"blocked","expression":"merchantId == '\''BADSHOP'\''"}]}'
+curl -X DELETE http://localhost:8080/api/v1/scenarios/4 -H "Authorization: Bearer $TOKEN"
+
 # Clear the scenario cache (requires the ADMIN role — the analyst user gets 403)
 curl -X POST http://localhost:8080/api/v1/cache/evict-scenarios -H "Authorization: Bearer $TOKEN"
 
@@ -156,6 +168,7 @@ com.fraud
 ├─ application/
 │   ├─ cqrs/            → Command, CommandHandler, Mediator
 │   ├─ transactions/    → command + handler + TransactionStore port + dto
+│   ├─ scenarios/       → scenario CRUD commands/handlers + ScenarioAdminStore & ExpressionValidator ports
 │   ├─ fraud/           → FraudParameters, ScenarioService, ScenarioProcessor port
 │   ├─ anomaly/         → AnomalyDetector port + command/handler/dto
 │   ├─ queue/           → OfflineOperation + publisher port
@@ -165,7 +178,7 @@ com.fraud
 └─ infrastructure/
     ├─ persistence/     → JPA repos + adapters, entity rows, seeder, message claims, user accounts
     ├─ maintenance/     → DataRetentionJob (transactions + message-claims retention)
-    ├─ rules/           → RuleEvaluator (SpEL), Base/Card/... ScenarioProcessor, ScenarioCatalog
+    ├─ rules/           → RuleEvaluator (SpEL), SpelExpressionValidator, Base/Card/... ScenarioProcessor, ScenarioCatalog
     ├─ outbox/          → OutboxMessage, OutboxRelay, publisher/ (logging/kafka/rabbit)
     ├─ tenant/          → TenantContext, RoutingDataSource, multi-tenant config + migrator
     ├─ anomaly/         → StatisticalAnomalyDetector, CardStatistics(Store)

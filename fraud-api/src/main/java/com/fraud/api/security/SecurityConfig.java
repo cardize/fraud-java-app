@@ -5,6 +5,7 @@ import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -59,9 +60,12 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/**",
                                 "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
-                        // RBAC: cache management mutates engine behavior for everyone -> admins only.
-                        // Roles come from the JWT's "roles" claim (see JwtAuthenticationFilter).
+                        // RBAC: cache and scenario mutations change engine behavior for everyone
+                        // -> admins only. Reading scenarios (GET) stays open to any authenticated
+                        // user. Roles come from the JWT's "roles" claim (see JwtAuthenticationFilter).
                         .requestMatchers("/api/v1/cache/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/scenarios/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/scenarios/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 // The rate limiter runs first (even before JWT validation) so limit overruns are rejected cheaply.
