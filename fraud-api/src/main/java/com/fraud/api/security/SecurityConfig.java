@@ -64,7 +64,9 @@ public class SecurityConfig {
                         // -> admins only. Reading scenarios (GET) stays open to any authenticated
                         // user. Roles come from the JWT's "roles" claim (see JwtAuthenticationFilter).
                         .requestMatchers("/api/v1/cache/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/audit/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/v1/scenarios/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/scenarios/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/scenarios/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

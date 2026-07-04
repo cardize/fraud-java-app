@@ -39,6 +39,7 @@ implementation (adapter) lives in infrastructure:
 | `AnomalyDetector` | `StatisticalAnomalyDetector` / `NoOpAnomalyDetector` |
 | `ScenarioAdminStore` | `JpaScenarioAdminStore` (evicts the scenario cache on every mutation) |
 | `ExpressionValidator` | `SpelExpressionValidator` (write-time safe-SpEL validation) |
+| `AuditTrail` | `PersistentAuditTrail` (in the API module — resolves the actor from the security context) |
 
 ## Tech Stack
 - **Java 21**, **Spring Boot 3.3**, **Maven** (multi-module)
@@ -86,9 +87,15 @@ mvn -pl fraud-gateway -am spring-boot:run
 ```bash
 # 1) Get a token. Seeded users (dev defaults): admin/fraud123 (roles ADMIN,USER),
 #    analyst/analyst123 (USER). Override via FRAUD_ADMIN_PASSWORD / FRAUD_ANALYST_PASSWORD.
+#    Login returns a short-lived access token + a rotating refresh token.
 TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username":"admin","password":"fraud123"}' | sed -E 's/.*"token":"([^"]+)".*/\1/')
+
+# Refresh (rotation): exchanges the refresh token for a NEW access+refresh pair. Each refresh
+# token is one-shot; replaying a consumed one revokes the user's whole token family (theft response).
+curl -X POST http://localhost:8080/api/v1/auth/refresh \
+  -H "Content-Type: application/json" -d '{"refreshToken":"<refreshToken from login>"}'
 
 # 2) Fraud check — a high amount (>5000) triggers the REJECT scenario
 curl -X POST http://localhost:8080/api/v1/transactions/get-fraud-response-for-card \
@@ -111,7 +118,15 @@ curl -X POST http://localhost:8080/api/v1/scenarios \
   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
   -d '{"name":"Blocked Merchant","productType":"CARD","module":1,"priority":0,
        "fraudResponseCode":"REVIEW","rules":[{"name":"blocked","expression":"merchantId == '\''BADSHOP'\''"}]}'
+curl -X PUT http://localhost:8080/api/v1/scenarios/4 \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"name":"Blocked Merchant v2","productType":"CARD","module":1,"priority":0,
+       "fraudResponseCode":"REJECT","rules":[{"name":"blocked","expression":"merchantId == '\''BADSHOP'\''"}]}'
 curl -X DELETE http://localhost:8080/api/v1/scenarios/4 -H "Authorization: Bearer $TOKEN"
+
+# Audit trail (ADMIN): the last 100 security-relevant actions (logins, scenario mutations,
+# token refreshes) with actor + correlation id
+curl http://localhost:8080/api/v1/audit -H "Authorization: Bearer $TOKEN"
 
 # Clear the scenario cache (requires the ADMIN role — the analyst user gets 403)
 curl -X POST http://localhost:8080/api/v1/cache/evict-scenarios -H "Authorization: Bearer $TOKEN"
@@ -146,6 +161,7 @@ mvn -Dtest=ContainersFraudFlowTest test    # Postgres+Kafka (requires Docker)
 | `fraud.scenario.parallel` / `max-parallelism` | bool / int | Parallel scenario execution |
 | `fraud.security.jwt-secret` | string | JWT signing key (env: `FRAUD_JWT_SECRET`) |
 | `FRAUD_ADMIN_PASSWORD` / `FRAUD_ANALYST_PASSWORD` | string | Seeded users' passwords (dev defaults: `fraud123` / `analyst123`) |
+| `fraud.security.refresh-expiration-ms` | ms (default 7 days) | Rotating refresh token lifetime (env: `FRAUD_REFRESH_EXPIRATION_MS`) |
 | `fraud.security.login-rate-limit.capacity` / `window-seconds` | int (default 5/60) | Login brute-force limit (per IP) |
 | `fraud.retention.transactions-days` / `message-claims-days` | int (default 90/30) | Retention for transactions / dedup claims (daily `DataRetentionJob`) |
 | profile `multitenant` | on/off | Per-tenant DB + per-tenant Flyway (`X-Tenant` header) |
@@ -159,12 +175,15 @@ mvn -Dtest=ContainersFraudFlowTest test    # Postgres+Kafka (requires Docker)
 > - With H2, `flyway-core` is enough; for Postgres, `flyway-database-postgresql` is added (test scope here).
 > - Kafka/Rabbit only connect to a broker when `publisher` is set to that value; the default `logging` works offline.
 > - Multi-tenant run: `mvn -pl fraud-api -am spring-boot:run -Dspring-boot.run.profiles=multitenant`,
->   with `-H "X-Tenant: alpha"` on requests.
+>   with `-H "X-Tenant: alpha"` on requests. At startup, `MultiTenantSeeder` onboards EVERY tenant
+>   (scenarios + users), so logins work against alpha/beta too.
+> - **Audit trail:** logins (success/failure), token refreshes, logout and scenario mutations are
+>   written append-only to `audit_log` with actor + correlation id; read via `GET /api/v1/audit` (ADMIN).
 
 ## Module & Package Map
 ```
 com.fraud
-├─ api/                 → Controllers, security/, tenant/, config/ (OpenAPI), exception handler
+├─ api/                 → Controllers, security/ (JWT+refresh), audit/, tenant/, config/ (OpenAPI, MultiTenantSeeder), exception handler
 ├─ application/
 │   ├─ cqrs/            → Command, CommandHandler, Mediator
 │   ├─ transactions/    → command + handler + TransactionStore port + dto

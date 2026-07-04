@@ -1,6 +1,7 @@
 package com.fraud.infrastructure.maintenance;
 
 import com.fraud.infrastructure.persistence.MessageClaimJpaRepository;
+import com.fraud.infrastructure.persistence.RefreshTokenJpaRepository;
 import com.fraud.infrastructure.persistence.TransactionJpaRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,15 +36,18 @@ public class DataRetentionJob {
 
     private final TransactionJpaRepository transactions;
     private final MessageClaimJpaRepository claims;
+    private final RefreshTokenJpaRepository refreshTokens;
     private final int transactionsDays;
     private final int messageClaimsDays;
 
     public DataRetentionJob(TransactionJpaRepository transactions,
                             MessageClaimJpaRepository claims,
+                            RefreshTokenJpaRepository refreshTokens,
                             @Value("${fraud.retention.transactions-days:90}") int transactionsDays,
                             @Value("${fraud.retention.message-claims-days:30}") int messageClaimsDays) {
         this.transactions = transactions;
         this.claims = claims;
+        this.refreshTokens = refreshTokens;
         this.transactionsDays = transactionsDays;
         this.messageClaimsDays = messageClaimsDays;
     }
@@ -54,9 +58,12 @@ public class DataRetentionJob {
         Instant now = Instant.now();
         int deletedTx = transactions.deleteByTransactionDateBefore(now.minus(transactionsDays, ChronoUnit.DAYS));
         int deletedClaims = claims.deleteByClaimedAtBefore(now.minus(messageClaimsDays, ChronoUnit.DAYS));
-        if (deletedTx > 0 || deletedClaims > 0) {
-            log.info("Retention: deleted {} transactions (>{}d) and {} message claims (>{}d)",
-                    deletedTx, transactionsDays, deletedClaims, messageClaimsDays);
+        // Expired refresh tokens are dead weight regardless of their used flag — no config knob
+        // needed, the expiry itself IS the retention boundary.
+        int deletedTokens = refreshTokens.deleteByExpiresAtBefore(now);
+        if (deletedTx > 0 || deletedClaims > 0 || deletedTokens > 0) {
+            log.info("Retention: deleted {} transactions (>{}d), {} message claims (>{}d), {} expired refresh tokens",
+                    deletedTx, transactionsDays, deletedClaims, messageClaimsDays, deletedTokens);
         }
     }
 }

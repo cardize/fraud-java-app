@@ -5,12 +5,14 @@ import com.fraud.application.cqrs.Mediator;
 import com.fraud.application.scenarios.CreateScenarioCommand;
 import com.fraud.application.scenarios.DeleteScenarioCommand;
 import com.fraud.application.scenarios.ListScenariosCommand;
+import com.fraud.application.scenarios.UpdateScenarioCommand;
 import com.fraud.application.scenarios.dto.ScenarioDto;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -43,6 +45,13 @@ public class ScenarioController {
     @PostMapping
     public ApiResult<ScenarioDto> create(@Valid @RequestBody CreateScenarioCommand command) {
         return mediator.send(command);
+    }
+
+    /** Full replacement (PUT): the body reuses the create shape; the id comes from the path. */
+    @PutMapping("/{id}")
+    public ApiResult<ScenarioDto> update(@PathVariable long id,
+                                         @Valid @RequestBody CreateScenarioCommand body) {
+        return mediator.send(new UpdateScenarioCommand(id, body));
     }
 
     @DeleteMapping("/{id}")

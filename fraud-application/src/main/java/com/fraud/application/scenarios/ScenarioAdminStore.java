@@ -3,6 +3,7 @@ package com.fraud.application.scenarios;
 import com.fraud.application.scenarios.dto.ScenarioDto;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * PORT: scenario management writes/reads (create/delete/list).
@@ -14,6 +15,9 @@ import java.util.List;
 public interface ScenarioAdminStore {
 
     ScenarioDto create(CreateScenarioCommand command);
+
+    /** Full replacement (PUT semantics); empty when no scenario with the given id exists. */
+    Optional<ScenarioDto> update(long id, CreateScenarioCommand data);
 
     /** @return false when no scenario with the given id exists */
     boolean delete(long id);

@@ -63,4 +63,21 @@ public class ScenarioRow {
     public int getPriority() { return priority; }
     public String getFraudResponseCode() { return fraudResponseCode; }
     public List<RuleRow> getRules() { return rules; }
+
+    /**
+     * Full replacement (PUT semantics): all fields AND the whole rule list are replaced.
+     * The old RuleRows are deleted by orphanRemoval; the new ones are cascaded in. The managed
+     * collection is mutated IN PLACE (clear+addAll) — swapping the list reference would break
+     * Hibernate's collection tracking.
+     */
+    public void replaceWith(String name, ProductType productType, int module,
+                            int priority, String fraudResponseCode, List<RuleRow> newRules) {
+        this.name = name;
+        this.productType = productType;
+        this.module = module;
+        this.priority = priority;
+        this.fraudResponseCode = fraudResponseCode;
+        this.rules.clear();
+        this.rules.addAll(newRules);
+    }
 }

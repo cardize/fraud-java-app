@@ -57,6 +57,12 @@ public class MultiTenantDataSourceConfig {
         return new MultiTenantFlywayMigrator(tenantDataSources());
     }
 
+    /** Tenant ids for components that must iterate every tenant (e.g. MultiTenantSeeder). */
+    @Bean
+    public TenantCatalog tenantCatalog() {
+        return new TenantCatalog(java.util.List.copyOf(tenantDataSources().keySet()));
+    }
+
     private DataSource h2(String dbName) {
         return DataSourceBuilder.create()
                 .driverClassName("org.h2.Driver")

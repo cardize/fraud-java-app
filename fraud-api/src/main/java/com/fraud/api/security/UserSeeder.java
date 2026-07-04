@@ -46,6 +46,15 @@ public class UserSeeder implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
+        seedIfEmpty();
+    }
+
+    /**
+     * Idempotent seeding, extracted so it can also be invoked PER TENANT (multitenant profile,
+     * see MultiTenantSeeder). Without that, only the default tenant DB would have users and a
+     * login with an X-Tenant header would always fail against an empty users table.
+     */
+    public void seedIfEmpty() {
         if (users.count() > 0) {
             return; // already seeded (or managed externally)
         }

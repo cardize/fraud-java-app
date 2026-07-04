@@ -77,6 +77,125 @@ class FraudFlowIntegrationTest {
                 .andExpect(status().isForbidden());
     }
 
+    // Update (PUT) is a full replacement; the response reflects the new state.
+    @Test
+    void adminCanUpdateScenario() throws Exception {
+        String token = login();
+        // module 77 is unused by other tests -> no cross-test interference with decisions
+        MvcResult created = mockMvc.perform(post("/api/v1/scenarios")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Temp\",\"productType\":\"CARD\",\"module\":77,"
+                                + "\"priority\":5,\"fraudResponseCode\":\"REVIEW\",\"rules\":["
+                                + "{\"name\":\"r1\",\"expression\":\"amountValue > 100\"}]}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andReturn();
+        long id = objectMapper.readTree(created.getResponse().getContentAsString())
+                .path("data").path("id").asLong();
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .put("/api/v1/scenarios/" + id)
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Temp Renamed\",\"productType\":\"CARD\",\"module\":77,"
+                                + "\"priority\":9,\"fraudResponseCode\":\"REJECT\",\"rules\":["
+                                + "{\"name\":\"r2\",\"expression\":\"amountValue > 200\"}]}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.name").value("Temp Renamed"))
+                .andExpect(jsonPath("$.data.fraudResponseCode").value("REJECT"))
+                .andExpect(jsonPath("$.data.rules[0].name").value("r2"));
+    }
+
+    // Refresh rotation: the presented token is consumed once; reusing a consumed token is a theft
+    // signal and revokes the whole family (even the freshly rotated successor stops working).
+    @Test
+    void refreshRotatesTokensAndReuseRevokesFamily() throws Exception {
+        MvcResult loginResult = mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"username\":\"analyst\",\"password\":\"analyst123\"}"))
+                .andExpect(status().isOk())
+                .andReturn();
+        String refresh1 = objectMapper.readTree(loginResult.getResponse().getContentAsString())
+                .path("data").path("refreshToken").asText();
+
+        // 1) exchange works and returns a NEW pair
+        MvcResult rotated = mockMvc.perform(post("/api/v1/auth/refresh")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"refreshToken\":\"" + refresh1 + "\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.token").isNotEmpty())
+                .andReturn();
+        var rotatedData = objectMapper.readTree(rotated.getResponse().getContentAsString()).path("data");
+        String newAccess = rotatedData.path("token").asText();
+        String refresh2 = rotatedData.path("refreshToken").asText();
+
+        // the rotated access token is usable
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .get("/api/v1/scenarios")
+                        .header("Authorization", "Bearer " + newAccess))
+                .andExpect(status().isOk());
+
+        // 2) replaying the CONSUMED token is rejected...
+        mockMvc.perform(post("/api/v1/auth/refresh")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"refreshToken\":\"" + refresh1 + "\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(false));
+
+        // 3) ...and the reuse revoked the successor too (family revocation)
+        mockMvc.perform(post("/api/v1/auth/refresh")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"refreshToken\":\"" + refresh2 + "\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(false));
+    }
+
+    @Test
+    void logoutRevokesRefreshTokens() throws Exception {
+        MvcResult loginResult = mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"username\":\"admin\",\"password\":\"fraud123\"}"))
+                .andExpect(status().isOk())
+                .andReturn();
+        var data = objectMapper.readTree(loginResult.getResponse().getContentAsString()).path("data");
+        String access = data.path("token").asText();
+        String refresh = data.path("refreshToken").asText();
+
+        mockMvc.perform(post("/api/v1/auth/logout")
+                        .header("Authorization", "Bearer " + access))
+                .andExpect(status().isOk());
+
+        // logout must kill the refresh token as well — otherwise logout would be cosmetic
+        mockMvc.perform(post("/api/v1/auth/refresh")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"refreshToken\":\"" + refresh + "\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(false));
+    }
+
+    @Test
+    void adminCanReadAuditLog() throws Exception {
+        String token = login();
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .get("/api/v1/audit")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data").isArray());
+    }
+
+    @Test
+    void analystCannotReadAuditLog() throws Exception {
+        String token = login("analyst", "analyst123");
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .get("/api/v1/audit")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isForbidden());
+    }
+
     // Scenario management: an admin-created scenario must affect decisions IMMEDIATELY
     // (write-time SpEL validation passes, the scenario cache is evicted on create).
     @Test

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * JPA ADAPTER for the ScenarioAdminStore port.
@@ -31,15 +32,22 @@ public class JpaScenarioAdminStore implements ScenarioAdminStore {
 
     @Override
     public ScenarioDto create(CreateScenarioCommand cmd) {
-        List<RuleRow> rules = new ArrayList<>();
-        for (CreateScenarioCommand.NewRule rule : cmd.rules()) {
-            rules.add(new RuleRow(rule.name(), RuleType.SIMPLE, rule.expression()));
-        }
         ScenarioRow row = repository.save(new ScenarioRow(
                 cmd.name(), cmd.productType(), cmd.module(), cmd.priority(),
-                cmd.fraudResponseCode(), rules));
+                cmd.fraudResponseCode(), toRuleRows(cmd.rules())));
         catalog.evictAll();
         return toDto(row);
+    }
+
+    @Override
+    public Optional<ScenarioDto> update(long id, CreateScenarioCommand data) {
+        return repository.findById(id).map(row -> {
+            row.replaceWith(data.name(), data.productType(), data.module(), data.priority(),
+                    data.fraudResponseCode(), toRuleRows(data.rules()));
+            ScenarioRow saved = repository.save(row);
+            catalog.evictAll();
+            return toDto(saved);
+        });
     }
 
     @Override
@@ -55,6 +63,14 @@ public class JpaScenarioAdminStore implements ScenarioAdminStore {
     @Override
     public List<ScenarioDto> list() {
         return repository.findAll().stream().map(this::toDto).toList();
+    }
+
+    private List<RuleRow> toRuleRows(List<CreateScenarioCommand.NewRule> rules) {
+        List<RuleRow> rows = new ArrayList<>();
+        for (CreateScenarioCommand.NewRule rule : rules) {
+            rows.add(new RuleRow(rule.name(), RuleType.SIMPLE, rule.expression()));
+        }
+        return rows;
     }
 
     private ScenarioDto toDto(ScenarioRow row) {

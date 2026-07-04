@@ -28,6 +28,15 @@ public class ScenarioSeeder implements ApplicationRunner {
 
     @Override
     public void run(org.springframework.boot.ApplicationArguments args) {
+        seedIfEmpty();
+    }
+
+    /**
+     * Idempotent seeding, extracted so it can also be invoked PER TENANT: as an ApplicationRunner
+     * this class runs with no TenantContext set (-> only the default DB); in the multitenant
+     * profile, MultiTenantSeeder calls this once per tenant with the context set.
+     */
+    public void seedIfEmpty() {
         if (repository.existsByProductType(ProductType.CARD)) {
             return; // already seeded
         }
