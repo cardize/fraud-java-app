@@ -1,8 +1,8 @@
 package com.fraud.application.scenarios;
 
+import com.fraud.application.common.PageResult;
 import com.fraud.application.scenarios.dto.ScenarioDto;
 
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -22,5 +22,6 @@ public interface ScenarioAdminStore {
     /** @return false when no scenario with the given id exists */
     boolean delete(long id);
 
-    List<ScenarioDto> list();
+    /** Paged listing with optional productType/module filters (see ListScenariosCommand). */
+    PageResult<ScenarioDto> list(ListScenariosCommand query);
 }

@@ -255,7 +255,22 @@ class FraudFlowIntegrationTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data").isArray());
+                .andExpect(jsonPath("$.data.items").isArray())
+                .andExpect(jsonPath("$.data.page").value(0));
+    }
+
+    // Paging + filtering: productType=PF matches only the seeded PF scenario; size=1 bounds the page.
+    @Test
+    void listScenariosSupportsFilteringAndPaging() throws Exception {
+        String token = login("analyst", "analyst123");
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .get("/api/v1/scenarios?productType=PF&page=0&size=1")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.items.length()").value(1))
+                .andExpect(jsonPath("$.data.items[0].productType").value("PF"))
+                .andExpect(jsonPath("$.data.size").value(1));
     }
 
     @Test

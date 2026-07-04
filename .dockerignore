@@ -1,0 +1,9 @@
+.git
+.github
+.idea
+**/target
+*.iml
+*.md
+.gitattributes
+Dockerfile
+docker-compose.yml

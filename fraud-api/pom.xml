@@ -112,16 +112,18 @@
             <artifactId>kafka</artifactId>
             <scope>test</scope>
         </dependency>
-        <!-- Postgres JDBC driver and the Flyway Postgres module (Flyway 10 splits DBs into modules) -->
+        <!-- Postgres JDBC driver and the Flyway Postgres module (Flyway 10 splits DBs into modules).
+             RUNTIME scope (not test): the docker-compose deployment runs against real PostgreSQL,
+             so both must ship in the jar; tests see runtime-scoped deps too. -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <scope>test</scope>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-database-postgresql</artifactId>
-            <scope>test</scope>
+            <scope>runtime</scope>
         </dependency>
         <!-- For awaiting asynchronous conditions (waiting for the outbox relay to process) -->
         <dependency>

@@ -1,5 +1,7 @@
 # Fraud
 
+![CI](https://github.com/cardize/fraud-java-app/actions/workflows/ci.yml/badge.svg)
+
 A multi-module **fraud detection platform** written in Java 21 + Spring Boot.
 It evaluates incoming transactions with a rule/scenario engine and statistical anomaly detection;
 the decision is returned synchronously, while heavy work runs asynchronously through a durable outbox.
@@ -82,6 +84,18 @@ mvn -pl fraud-api -am spring-boot:run
 mvn -pl fraud-gateway -am spring-boot:run
 ```
 
+### Run with Docker (real Postgres + Kafka)
+
+```bash
+docker compose up --build
+```
+
+Starts four containers: **PostgreSQL 16** (Flyway migrates on boot), **Kafka** (single-node
+KRaft), the **API** (8080, management 9090 — outbox publishes to real Kafka) and the
+**gateway** (8090, management 9091, routed to the api container). One `Dockerfile` builds both
+bootable modules via `--build-arg MODULE=fraud-api|fraud-gateway` (multi-stage; non-root runtime
+user; pom-only layer for dependency caching).
+
 ### Example request (JWT-protected)
 
 ```bash
@@ -110,10 +124,12 @@ curl -X POST http://localhost:8080/api/v1/ai/check-transaction \
   -d '{"transactionId":"11111111-1111-1111-1111-111111111111","shadowCardNo":"CARD123",
        "amount":50000,"merchantId":"M1","transactionDate":"2026-01-01T03:00:00Z"}'
 
-# Scenario management (GET: any authenticated user; POST/DELETE: ADMIN role).
+# Scenario management (GET: any authenticated user; POST/PUT/DELETE: ADMIN role).
 # Expressions are validated at write time (safe SpEL only) and the scenario cache is evicted on
 # every mutation — the change affects the very next transaction.
-curl http://localhost:8080/api/v1/scenarios -H "Authorization: Bearer $TOKEN"
+# Listing is paged (?page, ?size — clamped to 100) with optional filters (?productType, ?module).
+curl "http://localhost:8080/api/v1/scenarios?productType=CARD&module=1&page=0&size=20" \
+  -H "Authorization: Bearer $TOKEN"
 curl -X POST http://localhost:8080/api/v1/scenarios \
   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
   -d '{"name":"Blocked Merchant","productType":"CARD","module":1,"priority":0,
@@ -141,11 +157,15 @@ curl -X POST http://localhost:8080/api/v1/auth/logout -H "Authorization: Bearer 
   (separate management port — needs no JWT; in production it is closed off purely at the
   network/firewall level. The gateway's own actuator is on 9091.)
 
-## Tests
+## Tests & CI
 ```bash
 mvn test                                   # unit + MockMvc integration tests
 mvn -Dtest=ContainersFraudFlowTest test    # Postgres+Kafka (requires Docker)
 ```
+
+GitHub Actions (`.github/workflows/ci.yml`) runs `mvn verify` (including the Testcontainers
+suite — Docker is available on hosted runners) on every push/PR to `master`, and validates both
+Docker images on push.
 
 ## Configuration keys (application.yml)
 | Key | Values | Effect |
