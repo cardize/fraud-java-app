@@ -5,8 +5,6 @@ import com.fraud.domain.transaction.Transaction;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
@@ -23,28 +21,27 @@ import java.util.UUID;
 public class JpaTransactionStore implements TransactionStore {
 
     private final TransactionJpaRepository jpaRepository;
-    private final MessageClaimJpaRepository claimRepository;
+    private final MessageClaimInserter claimInserter;
 
-    public JpaTransactionStore(TransactionJpaRepository jpaRepository, MessageClaimJpaRepository claimRepository) {
+    public JpaTransactionStore(TransactionJpaRepository jpaRepository, MessageClaimInserter claimInserter) {
         this.jpaRepository = jpaRepository;
-        this.claimRepository = claimRepository;
+        this.claimInserter = claimInserter;
     }
 
     /**
-     * REQUIRES_NEW: the claim attempt runs ISOLATED from the caller's (the handler's) transaction,
-     * in its own transaction. Otherwise, a unique-constraint violation could make Hibernate mark
-     * the caller's transaction "rollback-only", breaking the normal save() call the handler makes
-     * right afterward. A failed claim only rolls back this small, separate transaction; the
-     * handler's actual transaction stays healthy.
+     * The INSERT runs in its own REQUIRES_NEW transaction inside {@link MessageClaimInserter};
+     * the catch sits HERE, OUTSIDE that transaction boundary. Catching inside the boundary was a
+     * real bug: Spring Data's repository interceptor had already marked the inner transaction
+     * rollback-only, so the "successful" return then blew up at commit with
+     * UnexpectedRollbackException (see MessageClaimInserter's javadoc for the full story).
      */
     @Override
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public boolean claimMessage(long messageId, int module) {
         try {
-            claimRepository.saveAndFlush(new MessageClaim(messageId, module));
+            claimInserter.insert(messageId, module);
             return true;
         } catch (DataIntegrityViolationException e) {
-            return false;
+            return false; // another request already holds the claim -> DUPLICATE
         }
     }
 

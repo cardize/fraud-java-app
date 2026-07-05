@@ -34,7 +34,12 @@ public class JdbcTransactionStore implements TransactionStore {
         this.jdbc = jdbc;
     }
 
-    /** See {@link JpaTransactionStore#claimMessage} for the rationale behind REQUIRES_NEW. */
+    /**
+     * See {@link MessageClaimInserter} for the rationale behind REQUIRES_NEW. Unlike the JPA
+     * adapter, catching INSIDE the method is safe here: JdbcTemplate throws the translated
+     * exception directly — no participating @Transactional interceptor sits between the statement
+     * and this catch, so nothing marks the transaction rollback-only before we handle it.
+     */
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public boolean claimMessage(long messageId, int module) {

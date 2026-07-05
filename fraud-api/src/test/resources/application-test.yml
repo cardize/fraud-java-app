@@ -1,0 +1,17 @@
+# Test profile overrides (activated with @ActiveProfiles("test") on the integration tests).
+#
+# IMPORTANT: this file is deliberately named application-TEST.yml, NOT application.yml. A file
+# named application.yml in src/test/resources SHADOWS (fully replaces, does not merge with) the
+# main application.yml — which silently dropped spring.liquibase.enabled=false and let Liquibase
+# AND Flyway both run against the same schema ("found non-empty schema but no history table").
+# A profile-suffixed file is MERGED over the main one instead.
+#
+# The login rate limiter works per IP; all MockMvc tests share the same (mock) client IP. With
+# the production limit (5/minute), the integration suite's many login() calls would produce
+# flaky 429 failures. The limit is relaxed here for tests only; production behavior (the default
+# in application.yml) is unaffected.
+fraud:
+  security:
+    login-rate-limit:
+      capacity: 1000
+      window-seconds: 60
