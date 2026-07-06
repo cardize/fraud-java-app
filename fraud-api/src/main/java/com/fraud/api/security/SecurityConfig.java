@@ -1,6 +1,7 @@
 package com.fraud.api.security;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,16 +25,33 @@ import java.time.Duration;
  * the MAIN chain keeps its secure headers: clickjacking protection (frame DENY), HSTS and
  * referrer-policy.
  *
- * Public endpoints: login, Swagger UI. Everything else requires a token.
- * Actuator (health/metrics/prometheus) is NOT covered by this chain — it is served on a separate
- * port (management.server.port), see application.yml.
+ * Public endpoints: login, Swagger UI, actuator. Everything else requires a token.
+ *
+ * CORRECTED ASSUMPTION (found on the first real docker-compose run — MockMvc tests never exercise
+ * a real second port, so this was never actually verified): management.server.port gives actuator
+ * a separate embedded-Tomcat CONNECTOR, but it is still the SAME Tomcat instance and the SAME
+ * servlet-container-wide Spring Security filter. apiChain has no securityMatcher (it matches
+ * "/**"), so it intercepted /actuator/health on port 9090 too and returned 403 for every
+ * unauthenticated scrape — Prometheus would have silently never worked, exactly the failure mode
+ * Section 5.8 of the technical report describes, just via a different path than assumed. Fix:
+ * actuator paths are explicitly permitAll()'d below; the port separation still matters for network
+ * isolation (firewall/VPC), just not for bypassing this filter chain.
  */
 @Configuration
 public class SecurityConfig {
 
-    /** H2 console only — highest priority, sameOrigin framing allowed (the console uses an iframe). */
+    /**
+     * H2 console only — highest priority, sameOrigin framing allowed (the console uses an iframe).
+     *
+     * REGISTERED ONLY WHEN THE CONSOLE IS ENABLED: PathRequest.toH2Console() resolves the
+     * H2ConsoleProperties bean lazily AT REQUEST TIME — with the console disabled (e.g. the
+     * docker-compose Postgres deployment sets SPRING_H2_CONSOLE_ENABLED=false) that bean doesn't
+     * exist, and every single request died with NoSuchBeanDefinitionException (HTTP 500) inside
+     * the security chain. Found by the first real docker-compose run.
+     */
     @Bean
     @Order(1)
+    @ConditionalOnProperty(name = "spring.h2.console.enabled", havingValue = "true")
     public SecurityFilterChain h2ConsoleChain(HttpSecurity http) throws Exception {
         http
                 .securityMatcher(PathRequest.toH2Console())
@@ -59,7 +77,8 @@ public class SecurityConfig {
                                 .maxAgeInSeconds(31_536_000)))               // 1 year (effective under HTTPS)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/**",
-                                "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
+                                "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**",
+                                "/actuator/**").permitAll()
                         // RBAC: cache and scenario mutations change engine behavior for everyone
                         // -> admins only. Reading scenarios (GET) stays open to any authenticated
                         // user. Roles come from the JWT's "roles" claim (see JwtAuthenticationFilter).

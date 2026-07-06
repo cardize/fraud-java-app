@@ -132,8 +132,12 @@ management:
     health:
       show-details: when_authorized
   health:
-    # Brokers are optional; /actuator/health shouldn't go DOWN while they're not running
+    # Brokers/Redis are optional; /actuator/health must not go DOWN while they're not running.
+    # (The Redis starter is on the classpath, so its health indicator would try localhost:6379
+    # on every scrape — re-enabled by the 'redis' profile which actually runs Redis.)
     rabbit:
+      enabled: false
+    redis:
       enabled: false
 
 logging:

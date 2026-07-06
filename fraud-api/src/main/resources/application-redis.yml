@@ -10,3 +10,9 @@ spring:
       port: 6379
   cache.redis:
     time-to-live: 120000     # 2 min
+
+# Redis is a real dependency in this profile -> its health matters again.
+management:
+  health:
+    redis:
+      enabled: true
