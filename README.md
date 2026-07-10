@@ -165,6 +165,10 @@ mvn test                                   # unit + MockMvc integration tests
 mvn -Dtest=ContainersFraudFlowTest test    # Postgres+Kafka (requires Docker)
 ```
 
+53 tests as of this round, including a concurrency test for `CardStatistics.snapshotAndUpdate`
+(50 threads, verifies no update is lost or double-counted) and unit tests for `JwtService`,
+`TokenBlacklist`, `RefreshTokenService`, and all three outbox `MessagePublisher` adapters.
+
 GitHub Actions (`.github/workflows/ci.yml`) runs `mvn verify` (including the Testcontainers
 suite — Docker is available on hosted runners) on every push/PR to `master`, and validates both
 Docker images on push.
