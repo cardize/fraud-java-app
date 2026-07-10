@@ -151,7 +151,9 @@ curl -X POST http://localhost:8080/api/v1/cache/evict-scenarios -H "Authorizatio
 curl -X POST http://localhost:8080/api/v1/auth/logout -H "Authorization: Bearer $TOKEN"
 ```
 
-- **Swagger UI:** http://localhost:8080/swagger-ui.html
+- **Swagger UI:** http://localhost:8080/swagger-ui.html — every endpoint is tagged and described
+  (`@Operation`/`@Tag`); `login`/`refresh` are marked as public so "Authorize" isn't demanded before
+  you can obtain a token in the first place.
 - **H2 console:** http://localhost:8080/h2-console (JDBC URL: `jdbc:h2:mem:fraud`)
 - **Health/Prometheus:** http://localhost:9090/actuator/health · http://localhost:9090/actuator/prometheus
   (separate management port — needs no JWT; in production it is closed off purely at the

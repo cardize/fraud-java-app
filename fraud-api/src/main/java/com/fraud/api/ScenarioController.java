@@ -9,6 +9,9 @@ import com.fraud.application.scenarios.ListScenariosCommand;
 import com.fraud.application.scenarios.UpdateScenarioCommand;
 import com.fraud.application.scenarios.dto.ScenarioDto;
 import com.fraud.domain.shared.ProductType;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,6 +33,8 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping("/api/v1/scenarios")
+@Tag(name = "Scenarios", description = "Rule/scenario CRUD. GET: any authenticated user. "
+        + "POST/PUT/DELETE: ADMIN role — they mutate live fraud-decision behavior.")
 public class ScenarioController {
 
     private final Mediator mediator;
@@ -38,29 +43,37 @@ public class ScenarioController {
         this.mediator = mediator;
     }
 
-    /** Paged listing; productType/module are optional filters. Size is clamped server-side (max 100). */
     @GetMapping
+    @Operation(summary = "List scenarios", description = "Paged; productType/module are optional "
+            + "filters. size is clamped server-side to 100.")
     public ApiResult<PageResult<ScenarioDto>> list(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
-            @RequestParam(required = false) ProductType productType,
-            @RequestParam(required = false) Integer module) {
+            @Parameter(description = "Optional filter") @RequestParam(required = false) ProductType productType,
+            @Parameter(description = "Optional filter") @RequestParam(required = false) Integer module) {
         return mediator.send(new ListScenariosCommand(page, size, productType, module));
     }
 
     @PostMapping
+    @Operation(summary = "Create a scenario", description = "ADMIN only. Every rule expression is "
+            + "validated at write time (same locked-down SpEL context the engine evaluates against) "
+            + "before anything is persisted; the scenario cache is evicted on success so the change "
+            + "affects the very next transaction.")
     public ApiResult<ScenarioDto> create(@Valid @RequestBody CreateScenarioCommand command) {
         return mediator.send(command);
     }
 
-    /** Full replacement (PUT): the body reuses the create shape; the id comes from the path. */
     @PutMapping("/{id}")
+    @Operation(summary = "Replace a scenario", description = "ADMIN only. Full replacement (PUT "
+            + "semantics) — the body reuses the create shape; the id comes from the path.")
     public ApiResult<ScenarioDto> update(@PathVariable long id,
                                          @Valid @RequestBody CreateScenarioCommand body) {
         return mediator.send(new UpdateScenarioCommand(id, body));
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "Delete a scenario", description = "ADMIN only. Cascades to the "
+            + "scenario's rules and evicts the scenario cache.")
     public ApiResult<Void> delete(@PathVariable long id) {
         return mediator.send(new DeleteScenarioCommand(id));
     }

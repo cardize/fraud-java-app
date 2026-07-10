@@ -13,6 +13,10 @@ import org.springframework.context.annotation.Configuration;
  *
  * Swagger UI: http://localhost:8080/swagger-ui.html  ·  API schema: /v3/api-docs
  * Use the "Authorize" button to enter a Bearer token and try the protected endpoints.
+ *
+ * The bearer requirement set here applies GLOBALLY to every operation; login/refresh override it
+ * with an empty @SecurityRequirements on the method (see AuthController) since those two are
+ * public — without the override Swagger UI would wrongly demand a token before you can obtain one.
  */
 @Configuration
 public class OpenApiConfig {

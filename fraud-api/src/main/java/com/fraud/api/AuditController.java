@@ -2,6 +2,8 @@ package com.fraud.api;
 
 import com.fraud.application.common.ApiResult;
 import com.fraud.infrastructure.persistence.AuditLogJpaRepository;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -15,6 +17,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/v1/audit")
+@Tag(name = "Audit", description = "ADMIN only")
 public class AuditController {
 
     public record AuditEntryDto(Instant occurredAt, String username, String action,
@@ -27,6 +30,8 @@ public class AuditController {
     }
 
     @GetMapping
+    @Operation(summary = "List the most recent audit entries", description = "ADMIN only. "
+            + "Logins, token refreshes, logout and scenario mutations, newest first (max 100).")
     public ApiResult<List<AuditEntryDto>> latest() {
         List<AuditEntryDto> entries = repository.findTop100ByOrderByOccurredAtDesc().stream()
                 .map(a -> new AuditEntryDto(a.getOccurredAt(), a.getUsername(), a.getAction(),

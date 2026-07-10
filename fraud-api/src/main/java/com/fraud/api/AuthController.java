@@ -10,6 +10,9 @@ import com.fraud.infrastructure.persistence.UserAccountJpaRepository;
 import io.jsonwebtoken.Claims;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -32,6 +35,7 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping("/api/v1/auth")
+@Tag(name = "Auth", description = "Login, token refresh, logout")
 public class AuthController {
 
     private final JwtService jwtService;
@@ -69,7 +73,16 @@ public class AuthController {
     public record RefreshRequest(@NotBlank String refreshToken) {}
     public record TokenResponse(String token, String refreshToken) {}
 
+    /**
+     * Public endpoint — {@code @SecurityRequirements()} overrides OpenApiConfig's GLOBAL bearer
+     * requirement (otherwise Swagger UI would misleadingly demand a token before you can even
+     * obtain one).
+     */
     @PostMapping("/login")
+    @SecurityRequirements
+    @Operation(summary = "Log in", description = "Verifies username/password against the user "
+            + "store and returns a short-lived access JWT plus a rotating refresh token. Seeded "
+            + "dev users: admin/fraud123 (ADMIN+USER), analyst/analyst123 (USER).")
     public ApiResult<TokenResponse> login(@Valid @RequestBody LoginRequest request) {
         UserAccount user = users.findByUsername(request.username()).orElse(null);
         String hash = (user != null && user.isEnabled()) ? user.getPasswordHash() : unknownUserHash;
@@ -94,6 +107,10 @@ public class AuthController {
      * (see RefreshTokenService.consume).
      */
     @PostMapping("/refresh")
+    @SecurityRequirements
+    @Operation(summary = "Refresh the access token", description = "One-shot rotation: the "
+            + "presented refresh token is consumed and a new access+refresh pair is returned. "
+            + "Reusing an already-consumed token is treated as theft and revokes the whole family.")
     public ApiResult<TokenResponse> refresh(@Valid @RequestBody RefreshRequest request) {
         UserAccount user = refreshTokens.consume(request.refreshToken())
                 .flatMap(users::findByUsername)
@@ -113,6 +130,8 @@ public class AuthController {
      * access tokens a second later).
      */
     @PostMapping("/logout")
+    @Operation(summary = "Log out", description = "Blacklists the access token's jti and revokes "
+            + "all of the user's refresh tokens.")
     public ApiResult<Void> logout(@RequestHeader(value = "Authorization", required = false) String authHeader) {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             Claims claims = jwtService.validate(authHeader.substring(7));
