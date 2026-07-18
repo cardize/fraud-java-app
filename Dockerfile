@@ -25,7 +25,7 @@ COPY . .
 RUN mvn -B -q -pl ${MODULE} -am package -DskipTests
 
 ########## runtime stage ##########
-FROM eclipse-temurin:21-jre@sha256:273396ed5998598ed1091e8d72711c2d36980a0e65103859c55a4e977a41ffd3
+FROM eclipse-temurin:25-jre@sha256:681c543d6f36c50f45e9b5226930a46203dcfa351d3670e9d0bdf0dabae53539
 ARG MODULE=fraud-api
 # curl exists only for the HEALTHCHECK below (the Ubuntu-based JRE image ships without it).
 RUN apt-get update \
