@@ -4,7 +4,9 @@
 #   docker build --build-arg MODULE=fraud-gateway .
 
 ########## build stage ##########
-FROM maven:3.9-eclipse-temurin-21 AS build
+# Digest-pinned (external review finding J): a tag can silently move to a different image; the
+# digest cannot. Dependabot's docker ecosystem keeps these pins bumped via PRs.
+FROM maven:3.9-eclipse-temurin-21@sha256:2b4496088e7b80ae10a8c9f74e574ea21380325a006ec684532ad6bad5bc7273 AS build
 ARG MODULE=fraud-api
 WORKDIR /workspace
 
@@ -23,13 +25,20 @@ COPY . .
 RUN mvn -B -q -pl ${MODULE} -am package -DskipTests
 
 ########## runtime stage ##########
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:21-jre@sha256:273396ed5998598ed1091e8d72711c2d36980a0e65103859c55a4e977a41ffd3
 ARG MODULE=fraud-api
-# Never run as root inside the container.
-RUN useradd --system --uid 1001 appuser
+# curl exists only for the HEALTHCHECK below (the Ubuntu-based JRE image ships without it).
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --system --uid 1001 appuser
 USER appuser
 WORKDIR /app
 COPY --from=build /workspace/${MODULE}/target/*.jar app.jar
 # api: 8080 (+9090 management) · gateway: 8090 (+9091 management)
 EXPOSE 8080 8090 9090 9091
+# One Dockerfile serves both modules, whose management ports differ (api 9090, gateway 9091) —
+# probe both; the first one that answers wins.
+HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
+  CMD curl -fsS http://localhost:9090/actuator/health || curl -fsS http://localhost:9091/actuator/health || exit 1
 ENTRYPOINT ["java", "-jar", "app.jar"]

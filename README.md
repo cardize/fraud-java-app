@@ -189,6 +189,7 @@ Docker images on push.
 | `FRAUD_ADMIN_PASSWORD` / `FRAUD_ANALYST_PASSWORD` | string | Seeded users' passwords (dev defaults: `fraud123` / `analyst123`) |
 | `fraud.security.refresh-expiration-ms` | ms (default 7 days) | Rotating refresh token lifetime (env: `FRAUD_REFRESH_EXPIRATION_MS`) |
 | `fraud.security.login-rate-limit.capacity` / `window-seconds` | int (default 5/60) | Login brute-force limit (per IP) |
+| `fraud.security.login-rate-limit.trusted-proxies` | CSV (default empty) | Only these peer addresses may supply `X-Forwarded-For` (env: `FRAUD_TRUSTED_PROXIES`) |
 | `fraud.retention.transactions-days` / `message-claims-days` | int (default 90/30) | Retention for transactions / dedup claims (daily `DataRetentionJob`) |
 | profile `multitenant` | on/off | Per-tenant DB + per-tenant Flyway (`X-Tenant` header) |
 | profile `liquibase` | on/off | Migration tool: Liquibase instead of Flyway (default) |
@@ -196,6 +197,8 @@ Docker images on push.
 
 > Notes:
 > - **RBAC:** the JWT carries a `roles` claim (from the `users` table); `/api/v1/cache/**` requires `ROLE_ADMIN`.
+> - **Tenant binding:** the JWT also carries a `tenant` claim — in the `multitenant` profile a token
+>   only works under the tenant it was issued for (`X-Tenant` mismatch → 403; unknown tenant → 400).
 > - **Correlation id:** every response carries `X-Correlation-Id` (generated when absent) and every log line prints it (`[cid:...]`) — one request's logs can be traced end-to-end.
 > - **Business metrics:** `fraud.decisions{code}`, `fraud.auth.login{result}`, `fraud.scenario.duration{productType}`, `fraud.outbox.pending`, `fraud.outbox.published{result}` — all on `/actuator/prometheus` (port 9090).
 > - With H2, `flyway-core` is enough; for Postgres, `flyway-database-postgresql` is added (test scope here).

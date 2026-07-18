@@ -33,6 +33,32 @@ jobs:
           path: '**/target/surefire-reports/*'
           retention-days: 7
 
+  dependency-scan:
+    # Trivy scans the dependency tree (pom lockstep) and the repo for known CVEs and leaked
+    # secrets. Report-only for HIGH (visibility without blocking on the framework's upstream CVE
+    # lag) but FAILS the build on CRITICAL findings.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Trivy repository scan (report HIGH, fail on CRITICAL)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: CRITICAL,HIGH
+          exit-code: '0'
+          format: table
+
+      - name: Trivy gate (CRITICAL only)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: CRITICAL
+          exit-code: '1'
+          format: table
+
   docker-images:
     # Image build validates the Dockerfile on every push to master; PRs are covered by the
     # test job alone (faster feedback, no registry involved).

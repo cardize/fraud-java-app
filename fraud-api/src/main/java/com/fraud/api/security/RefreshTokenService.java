@@ -61,22 +61,30 @@ public class RefreshTokenService {
      * Consumes (one-shot) a refresh token; returns the username when valid.
      * Empty when: unknown, expired, or ALREADY USED — the last case additionally revokes all of
      * the user's refresh tokens (rotation-reuse = theft signal).
+     *
+     * RACE FIX (external review finding C): the used-check and the marking are ONE conditional
+     * UPDATE ({@link RefreshTokenJpaRepository#markUsedIfUnused}) instead of the old
+     * read-isUsed-then-markUsed sequence. Two concurrent /refresh calls with the same token could
+     * previously BOTH read used=false and both succeed, silently skipping reuse detection. Now
+     * exactly one wins the UPDATE; the loser is treated the same as any reuse — family revoked.
+     * (Strict by design: even a legitimate client double-firing refresh loses its family and must
+     * log in again — indistinguishable from theft, so treated as such.)
      */
     @Transactional
     public Optional<String> consume(String rawToken) {
-        RefreshToken token = repository.findByTokenHash(sha256(rawToken)).orElse(null);
+        String hash = sha256(rawToken);
+        RefreshToken token = repository.findByTokenHash(hash).orElse(null);
         if (token == null) {
-            return Optional.empty();
-        }
-        if (token.isUsed()) {
-            log.warn("Refresh token REUSE detected for user '{}' — revoking all refresh tokens", token.getUsername());
-            repository.deleteByUsername(token.getUsername());
             return Optional.empty();
         }
         if (token.isExpired(Instant.now())) {
             return Optional.empty();
         }
-        token.markUsed(); // dirty-checked and flushed by the surrounding transaction
+        if (repository.markUsedIfUnused(hash) == 0) {
+            log.warn("Refresh token REUSE detected for user '{}' — revoking all refresh tokens", token.getUsername());
+            repository.deleteByUsername(token.getUsername());
+            return Optional.empty();
+        }
         return Optional.of(token.getUsername());
     }
 

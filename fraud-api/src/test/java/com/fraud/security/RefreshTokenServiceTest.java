@@ -60,14 +60,17 @@ class RefreshTokenServiceTest {
     }
 
     @Test
-    void consumeReturnsUsernameAndMarksTheTokenUsedForAValidToken() {
+    void consumeReturnsUsernameWhenTheAtomicConsumeWins() {
         RefreshToken token = new RefreshToken("irrelevant-hash", "bob", Instant.now().plusSeconds(60));
         when(repository.findByTokenHash(anyString())).thenReturn(Optional.of(token));
+        // RACE FIX (review finding C): consuming is a single conditional UPDATE, not an
+        // entity-level read-check-write; 1 affected row = this call won the one-shot consume.
+        when(repository.markUsedIfUnused(anyString())).thenReturn(1);
 
         Optional<String> result = service.consume("raw-token");
 
         assertEquals(Optional.of("bob"), result);
-        assertTrue(token.isUsed(), "the SAME entity instance must be marked used (one-shot rotation)");
+        verify(repository, never()).deleteByUsername(anyString());
     }
 
     @Test
@@ -76,15 +79,19 @@ class RefreshTokenServiceTest {
         when(repository.findByTokenHash(anyString())).thenReturn(Optional.of(token));
 
         assertTrue(service.consume("raw-token").isEmpty());
-        // Plain expiry is NOT a theft signal (unlike reuse) -> no family-wide revocation.
+        // Plain expiry is NOT a theft signal (unlike reuse) -> no family-wide revocation,
+        // and the atomic consume is never even attempted.
+        verify(repository, never()).markUsedIfUnused(anyString());
         verify(repository, never()).deleteByUsername(anyString());
     }
 
     @Test
-    void consumeOfAnAlreadyUsedTokenIsTreatedAsTheftAndRevokesTheWholeFamily() {
+    void losingTheAtomicConsumeIsTreatedAsTheftAndRevokesTheWholeFamily() {
+        // Covers BOTH reuse of a long-consumed token and the concurrent double-spend race: in
+        // either case the conditional UPDATE affects 0 rows because used was already true.
         RefreshToken token = new RefreshToken("irrelevant-hash", "bob", Instant.now().plusSeconds(60));
-        token.markUsed();
         when(repository.findByTokenHash(anyString())).thenReturn(Optional.of(token));
+        when(repository.markUsedIfUnused(anyString())).thenReturn(0);
 
         assertTrue(service.consume("raw-token").isEmpty());
         verify(repository).deleteByUsername(eq("bob"));

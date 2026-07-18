@@ -5,6 +5,7 @@ import com.fraud.api.security.RefreshTokenService;
 import com.fraud.api.security.TokenBlacklist;
 import com.fraud.application.audit.AuditTrail;
 import com.fraud.application.common.ApiResult;
+import com.fraud.application.tenant.TenantProvider;
 import com.fraud.infrastructure.persistence.UserAccount;
 import com.fraud.infrastructure.persistence.UserAccountJpaRepository;
 import io.jsonwebtoken.Claims;
@@ -44,6 +45,7 @@ public class AuthController {
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenService refreshTokens;
     private final AuditTrail audit;
+    private final TenantProvider tenantProvider;
     private final Counter loginSuccess;
     private final Counter loginFailure;
     private final String unknownUserHash;
@@ -54,6 +56,7 @@ public class AuthController {
                           PasswordEncoder passwordEncoder,
                           RefreshTokenService refreshTokens,
                           AuditTrail audit,
+                          TenantProvider tenantProvider,
                           MeterRegistry meterRegistry) {
         this.jwtService = jwtService;
         this.blacklist = blacklist;
@@ -61,6 +64,7 @@ public class AuthController {
         this.passwordEncoder = passwordEncoder;
         this.refreshTokens = refreshTokens;
         this.audit = audit;
+        this.tenantProvider = tenantProvider;
         this.loginSuccess = meterRegistry.counter("fraud.auth.login", "result", "success");
         this.loginFailure = meterRegistry.counter("fraud.auth.login", "result", "failure");
         // TIMING/ENUMERATION DEFENSE: a real BCrypt hash that matches nothing. When the username
@@ -145,8 +149,10 @@ public class AuthController {
     }
 
     private TokenResponse issuePair(UserAccount user) {
+        // The tenant the credentials were verified under (the routed user store) is bound into
+        // the token — see JwtService.issue for the cross-tenant rationale.
         return new TokenResponse(
-                jwtService.issue(user.getUsername(), user.roleSet()),
+                jwtService.issue(user.getUsername(), user.roleSet(), tenantProvider.currentTenant()),
                 refreshTokens.issue(user.getUsername()));
     }
 }

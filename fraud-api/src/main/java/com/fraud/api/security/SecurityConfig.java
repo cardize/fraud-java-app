@@ -65,7 +65,8 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain apiChain(HttpSecurity http, JwtAuthenticationFilter jwtFilter,
                                         @Value("${fraud.security.login-rate-limit.capacity:5}") int rateCapacity,
-                                        @Value("${fraud.security.login-rate-limit.window-seconds:60}") int rateWindowSeconds)
+                                        @Value("${fraud.security.login-rate-limit.window-seconds:60}") int rateWindowSeconds,
+                                        @Value("${fraud.security.login-rate-limit.trusted-proxies:}") String trustedProxiesCsv)
             throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)                       // stateless API
@@ -77,8 +78,14 @@ public class SecurityConfig {
                                 .maxAgeInSeconds(31_536_000)))               // 1 year (effective under HTTPS)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/**",
-                                "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**",
-                                "/actuator/**").permitAll()
+                                "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
+                        // Actuator: ONLY the read-only endpoints actually exposed (see
+                        // management.endpoints.web.exposure.include) are permitted — a blanket
+                        // /actuator/** would silently open any endpoint someone later adds to the
+                        // exposure list (env, heapdump...) and depends on the management port
+                        // staying separate. Explicit list = safe even if actuator ever ends up on 8080.
+                        .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info",
+                                "/actuator/metrics", "/actuator/metrics/**", "/actuator/prometheus").permitAll()
                         // RBAC: cache and scenario mutations change engine behavior for everyone
                         // -> admins only. Reading scenarios (GET) stays open to any authenticated
                         // user. Roles come from the JWT's "roles" claim (see JwtAuthenticationFilter).
@@ -90,7 +97,9 @@ public class SecurityConfig {
                         .anyRequest().authenticated())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 // The rate limiter runs first (even before JWT validation) so limit overruns are rejected cheaply.
-                .addFilterBefore(new LoginRateLimitFilter(rateCapacity, Duration.ofSeconds(rateWindowSeconds)),
+                // trusted-proxies: only these peer addresses may supply X-Forwarded-For (see LoginRateLimitFilter).
+                .addFilterBefore(new LoginRateLimitFilter(rateCapacity, Duration.ofSeconds(rateWindowSeconds),
+                                parseCsv(trustedProxiesCsv)),
                         UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
@@ -103,5 +112,15 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    private static java.util.Set<String> parseCsv(String csv) {
+        if (csv == null || csv.isBlank()) {
+            return java.util.Set.of();
+        }
+        return java.util.Arrays.stream(csv.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(java.util.stream.Collectors.toUnmodifiableSet());
     }
 }

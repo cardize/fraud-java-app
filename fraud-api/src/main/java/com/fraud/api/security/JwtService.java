@@ -34,16 +34,23 @@ public class JwtService {
     }
 
     /**
-     * Issues a token carrying the user's roles as a claim (RBAC). Roles are read back by
+     * Issues a token carrying the user's roles (RBAC) and TENANT as claims. Roles are read back by
      * {@link JwtAuthenticationFilter} and turned into Spring authorities — the token is
      * self-contained, no DB lookup is needed per request.
+     *
+     * SECURITY (cross-tenant isolation): the tenant the user logged in under is BOUND to the
+     * token. Without this claim, a token issued for tenant "alpha" could be replayed with an
+     * "X-Tenant: beta" header and the request would be routed to beta's database — the header
+     * alone proved nothing about the caller. JwtAuthenticationFilter rejects any request whose
+     * X-Tenant context doesn't match the token's tenant.
      */
-    public String issue(String username, Collection<String> roles) {
+    public String issue(String username, Collection<String> roles, String tenant) {
         Instant now = Instant.now();
         return Jwts.builder()
                 .id(UUID.randomUUID().toString())
                 .subject(username)
                 .claim("roles", List.copyOf(roles))
+                .claim("tenant", tenant)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plusMillis(expirationMs)))
                 .signWith(key)

@@ -22,22 +22,24 @@ class JwtServiceTest {
     private static final String SECRET = "unit-test-secret-key-at-least-32-characters-long";
 
     @Test
-    void issueThenValidateRoundTripsSubjectAndRoles() {
+    void issueThenValidateRoundTripsSubjectRolesAndTenant() {
         JwtService jwtService = new JwtService(SECRET, 3_600_000);
 
-        String token = jwtService.issue("alice", List.of("ADMIN", "USER"));
+        String token = jwtService.issue("alice", List.of("ADMIN", "USER"), "alpha");
         Claims claims = jwtService.validate(token);
 
         assertEquals("alice", claims.getSubject());
         assertEquals(Set.of("ADMIN", "USER"), Set.copyOf(claims.get("roles", List.class)));
+        // Cross-tenant isolation: the tenant is BOUND to the token (external review finding A).
+        assertEquals("alpha", claims.get("tenant", String.class));
     }
 
     @Test
     void eachIssuedTokenGetsAUniqueJti() {
         JwtService jwtService = new JwtService(SECRET, 3_600_000);
 
-        String jti1 = jwtService.validate(jwtService.issue("alice", List.of("USER"))).getId();
-        String jti2 = jwtService.validate(jwtService.issue("alice", List.of("USER"))).getId();
+        String jti1 = jwtService.validate(jwtService.issue("alice", List.of("USER"), "default")).getId();
+        String jti2 = jwtService.validate(jwtService.issue("alice", List.of("USER"), "default")).getId();
 
         assertNotEquals(jti1, jti2, "each token must be individually revocable via a unique jti");
     }
@@ -46,7 +48,7 @@ class JwtServiceTest {
     void expiredTokenFailsValidation() throws InterruptedException {
         JwtService jwtService = new JwtService(SECRET, 1); // 1ms lifetime
 
-        String token = jwtService.issue("alice", List.of("USER"));
+        String token = jwtService.issue("alice", List.of("USER"), "default");
         Thread.sleep(20); // let it actually expire
 
         assertNull(jwtService.validate(token));
@@ -57,7 +59,7 @@ class JwtServiceTest {
         JwtService issuer = new JwtService(SECRET, 3_600_000);
         JwtService verifier = new JwtService("a-completely-different-secret-key-of-32+chars!!", 3_600_000);
 
-        String token = issuer.issue("alice", List.of("USER"));
+        String token = issuer.issue("alice", List.of("USER"), "default");
 
         assertNull(verifier.validate(token), "a token signed with a different key must never validate");
     }

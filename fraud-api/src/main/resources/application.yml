@@ -97,6 +97,10 @@ fraud:
     login-rate-limit:
       capacity: 5          # attempts allowed per IP within the window
       window-seconds: 60
+      # Peer addresses allowed to supply X-Forwarded-For (comma-separated). EMPTY by default:
+      # XFF from an untrusted peer is ignored (a spoofed header must not mint fresh rate-limit
+      # buckets). Set to your reverse proxy/gateway addresses when fronted by one.
+      trusted-proxies: "${FRAUD_TRUSTED_PROXIES:}"
   outbox:
     poll-interval-ms: 5000
     cleanup-interval-ms: 86400000   # 24 hours — PROCESSED record cleanup

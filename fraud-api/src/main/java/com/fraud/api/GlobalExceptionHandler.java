@@ -31,8 +31,15 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(ApiResult.fail("Validation error — " + details));
     }
 
-    /** Client-caused bad argument -> 400. */
-    @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class})
+    /**
+     * Client-caused bad argument -> 400.
+     *
+     * Deliberately ONLY IllegalArgumentException (external review finding F):
+     * IllegalStateException used to be mapped here too, but it almost always signals a
+     * SERVER-side invariant violation — mapping it to 400 blamed the client and hid real 500s
+     * from error-rate metrics and alerting. It now falls through to the generic 500 handler.
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiResult<Void>> handleBadRequest(RuntimeException ex) {
         log.warn("Invalid request: {}", ex.getMessage());
         return ResponseEntity.badRequest().body(ApiResult.fail("Invalid request"));

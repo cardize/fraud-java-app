@@ -13,6 +13,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Set;
 
 /**
  * Per-IP token-bucket rate limiting for the login endpoint (brute-force protection).
@@ -20,6 +21,10 @@ import java.time.Duration;
  * SECURITY: Authentication used to be attemptable without limit (a real brute-force gap).
  * A separate bucket is kept per client IP: 5 attempts per minute, 429 beyond that.
  * Buckets live in a bounded/expiring Caffeine cache (no memory leak).
+ *
+ * NOTE (single-instance scope): buckets are in-process. In a horizontally scaled deployment an
+ * attacker gets capacity × instances, and limits reset on restart — move the buckets to a shared
+ * store (e.g. Redis via bucket4j-redis) before scaling out.
  *
  * Deliberately NOT a Spring bean — it is added to the chain manually inside SecurityConfig;
  * otherwise Spring Boot would register it twice, once in the security chain and once as an
@@ -31,14 +36,16 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
 
     private final int capacity;
     private final Duration window;
+    private final Set<String> trustedProxies;
     private final Cache<String, Bucket> buckets = Caffeine.newBuilder()
             .maximumSize(50_000)
             .expireAfterAccess(Duration.ofMinutes(10))
             .build();
 
-    public LoginRateLimitFilter(int capacity, Duration window) {
+    public LoginRateLimitFilter(int capacity, Duration window, Set<String> trustedProxies) {
         this.capacity = capacity;
         this.window = window;
+        this.trustedProxies = trustedProxies;
     }
 
     @Override
@@ -65,11 +72,24 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
         return Bucket.builder().addLimit(limit).build();
     }
 
-    /** Reads the real client IP from X-Forwarded-For when behind a reverse proxy/gateway. */
+    /**
+     * The bucket key: the direct peer address, unless that peer is a TRUSTED reverse proxy — only
+     * then is X-Forwarded-For consulted.
+     *
+     * SECURITY (fixed after external review): the original version trusted XFF from ANYONE.
+     * Since /login is public, an attacker connecting directly could send a different fabricated
+     * XFF value on every request, get a fresh bucket each time, and brute-force without ever
+     * hitting the limit. Now a spoofed XFF from an untrusted peer is simply ignored — all of that
+     * attacker's requests share the bucket of their real socket address. Trusted proxies are
+     * configured via fraud.security.login-rate-limit.trusted-proxies (empty by default: never
+     * trust XFF).
+     */
     private String clientIp(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            return forwarded.split(",")[0].trim();
+        if (trustedProxies.contains(request.getRemoteAddr())) {
+            String forwarded = request.getHeader("X-Forwarded-For");
+            if (forwarded != null && !forwarded.isBlank()) {
+                return forwarded.split(",")[0].trim();
+            }
         }
         return request.getRemoteAddr();
     }

@@ -57,6 +57,11 @@ public class OutboxRelay {
     @Scheduled(fixedDelayString = "${fraud.outbox.poll-interval-ms:5000}")
     @Transactional
     public void processPending() {
+        // MULTI-INSTANCE SAFETY lives on the repository method, not here: findByStatus... carries
+        // @Lock(PESSIMISTIC_WRITE) + lock.timeout=-2, i.e. SELECT ... FOR UPDATE SKIP LOCKED on
+        // Postgres. A second relay instance skips the rows this transaction holds and cannot
+        // double-publish them. (Kept as an explicit note because a reviewer reading only this
+        // class flagged the lock as missing.)
         List<OutboxMessage> batch =
                 repository.findByStatusOrderByCreatedAtAsc(OutboxStatus.PENDING, Limit.of(BATCH_SIZE));
         if (batch.isEmpty()) {
