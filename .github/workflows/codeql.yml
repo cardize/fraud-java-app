@@ -24,6 +24,8 @@ jobs:
         with:
           languages: java-kotlin
           build-mode: manual
+          # Carries justified rule exclusions (e.g. CSRF-off on a stateless bearer-token API).
+          config-file: ./.github/codeql/codeql-config.yml
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4

@@ -1,0 +1,20 @@
+# CodeQL configuration (referenced by .github/workflows/codeql.yml).
+#
+# Excluded rules — each exclusion must carry its justification:
+#
+# java/spring-disabled-csrf-protection:
+#   Both flagged sites disable CSRF DELIBERATELY and correctly:
+#   - apiChain: a fully stateless bearer-token API (SessionCreationPolicy.STATELESS, no cookies,
+#     no server session). CSRF attacks work by the browser AUTOMATICALLY attaching credentials
+#     (cookies/session) to cross-site requests; an Authorization header is never attached
+#     automatically, so there is no CSRF vector to protect against. Enabling CSRF here would add
+#     no security and break every non-GET endpoint for legitimate API clients. This matches
+#     Spring Security's own guidance for non-browser/stateless clients.
+#   - h2ConsoleChain: dev-only (the bean is @ConditionalOnProperty on spring.h2.console.enabled,
+#     which is false in the Docker/Postgres deployment); the H2 console's own POST forms do not
+#     carry Spring's CSRF token and cannot function with it enabled.
+#   Revisit this exclusion if cookie- or session-based authentication is ever introduced.
+name: fraud-codeql-config
+query-filters:
+  - exclude:
+      id: java/spring-disabled-csrf-protection

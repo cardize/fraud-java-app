@@ -56,6 +56,8 @@ public class SecurityConfig {
         http
                 .securityMatcher(PathRequest.toH2Console())
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+                // CSRF off (CodeQL: justified exclusion, see .github/codeql/codeql-config.yml):
+                // dev-only surface, and the H2 console's own POST forms don't carry Spring's token.
                 .csrf(AbstractHttpConfigurer::disable)
                 .headers(h -> h.frameOptions(frame -> frame.sameOrigin()));
         return http.build();
@@ -69,7 +71,12 @@ public class SecurityConfig {
                                         @Value("${fraud.security.login-rate-limit.trusted-proxies:}") String trustedProxiesCsv)
             throws Exception {
         http
-                .csrf(AbstractHttpConfigurer::disable)                       // stateless API
+                // CSRF off — CORRECT for a fully stateless bearer-token API (CodeQL: justified
+                // exclusion, see .github/codeql/codeql-config.yml): CSRF exploits the browser
+                // AUTO-ATTACHING credentials (cookies/session) to cross-site requests; an
+                // Authorization header is never attached automatically, so the vector doesn't
+                // exist here. Re-evaluate if cookie/session auth is ever introduced.
+                .csrf(AbstractHttpConfigurer::disable)
                 .headers(h -> h
                         .frameOptions(frame -> frame.deny())                 // clickjacking protection
                         .referrerPolicy(rp -> rp.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER))
