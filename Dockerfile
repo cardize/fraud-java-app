@@ -6,7 +6,7 @@
 ########## build stage ##########
 # Digest-pinned (external review finding J): a tag can silently move to a different image; the
 # digest cannot. Dependabot's docker ecosystem keeps these pins bumped via PRs.
-FROM maven:3.9-eclipse-temurin-21@sha256:2b4496088e7b80ae10a8c9f74e574ea21380325a006ec684532ad6bad5bc7273 AS build
+FROM maven:3-eclipse-temurin-26@sha256:d5617b9a6307e1b51dc7c55edf09bacb66f1c91fb861949c34a3a0d4e16bd241 AS build
 ARG MODULE=fraud-api
 WORKDIR /workspace
 
